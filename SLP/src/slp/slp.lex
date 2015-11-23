@@ -35,6 +35,7 @@ DocumentationComment = "/**" {CommentContent} "*"+ "/"
 CommentContent       = ( [^*] | \*+ [^/*] )*
 
 /* identifiers */
+VAR=[a-zA-Z]+ /***** TODO: DELETE *****/ 
 IDENTIFIER		 = [a-z_][A-Za-z_0-9]*
 CLASS_IDENTIFIER = [A-Z][A-Za-z_0-9]*
 
@@ -55,7 +56,7 @@ StringCharacter = [^\r\n\"\\]
 "void"				{ return new Token(yyline, yytext(), sym.VOID); }
 "int"				{ return new Token(yyline, yytext(), sym.INT); }
 "boolean"			{ return new Token(yyline, yytext(), sym.BOOLEAN); }
-"string"			{ preturn new Token(yyline, yytext(), sym.STRING); }
+"string"			{ return new Token(yyline, yytext(), sym.STRING); }
 "return"			{ return new Token(yyline, yytext(), sym.RETURN); }
 "if"				{ return new Token(yyline, yytext(), sym.IF); }
 "else"				{ return new Token(yyline, yytext(), sym.ELSE); }
@@ -102,19 +103,17 @@ StringCharacter = [^\r\n\"\\]
 "!"					{ return new Token(yyline, yytext(), sym.LNEG); }
 
 /* library functions */
-"readi" 	{ return new Token(yyline, yytext(), sym.READI); }
-"print" 	{ return new Token(yyline, yytext(), sym.PRINT); }
+"readi" 			{ return new Token(yyline, yytext(), sym.READI); }
+"print" 			{ return new Token(yyline, yytext(), sym.PRINT); }
 
 /* string literal */
-\"                  { 
-						string.setLength(0); unescapedString.setLength(0);
-						yybegin(STRING);
-					}  
+\"                  { string.setLength(0); yybegin(STRING); }  
 
 /* numeric literals */
 {INTEGER}			{ return new Token(yyline, "INTEGER", sym.INTEGER, new Integer(yytext())); }
 					 
-/* identifiers */  
+/* identifiers */
+{VAR} 				{ return new Token(yyline, "VAR", sym.VAR, yytext()); } /***** TODO: DELETE *****/  
 {IDENTIFIER}		{ return new Token(yyline, "ID", sym.ID, yytext()); }
 {CLASS_IDENTIFIER}	{ return new Token(yyline, "CLASS_ID", sym.CLASS_ID, yytext()); }
 					
@@ -146,4 +145,4 @@ StringCharacter = [^\r\n\"\\]
 /* error fallback */
 [^]                	{ throw new RuntimeException("Lexical error: Illegal character at line " + (yyline+1) + " : '" + yytext() + "'"); }
 
-<<EOF>> 	{ return new Token(yyline, "EOF", sym.EOF); }
+<<EOF>> 			{ return new Token(yyline, "EOF", sym.EOF); }

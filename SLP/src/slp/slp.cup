@@ -39,11 +39,13 @@ scan with {:
  * - check if unescapedString needed
  */
 
-
-terminal PLUS, MINUS, MULTIPLY, DIVIDE, LP, RP, SEMI, ASSIGN, GT, LT, GTE, LTE, LAND, LOR;
+terminal SEMI, DOT, COMMA, PLUS, MINUS, MULTIPLY, DIVIDE, MOD, ASSIGN;
+terminal EQUAL, NEQUAL, GT, LT, GTE, LTE, LAND, LOR, LNEG, LB, RB, LP, RP, LCBR, RCBR;
+terminal CLASS, EXTENDS, STATIC, VOID, INT, BOOLEAN, STRING, RETURN, IF, ELSE, WHILE, BREAK, CONTINUE, THIS, NEW , LENGTH, TRUE, FALSE, NULL;  
 terminal READI, PRINT;
 terminal Integer INTEGER;
-terminal String QUOTE, ID, CLASS_ID; //VAR
+terminal String VAR; /***** TODO: DELETE *****/
+terminal String QUOTE, ID, CLASS_ID; 
 terminal UMINUS;
 
 non terminal Expr expr;
