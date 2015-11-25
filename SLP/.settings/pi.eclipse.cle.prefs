@@ -1,3 +1,17 @@
+//src/parser/slp.cup/cup-compact-red=false
+//src/parser/slp.cup/cup-debug=false
+//src/parser/slp.cup/cup-expected-conflicts=0
+//src/parser/slp.cup/cup-no-positions=false
+//src/parser/slp.cup/cup-no-scanner=false
+//src/parser/slp.cup/cup-non-terms=false
+//src/parser/slp.cup/cup-output=src
+//src/parser/slp.cup/cup-parser-class=Parser
+//src/parser/slp.cup/cup-symbols-class=sym
+//src/parser/slp.cup/cup-symbols-if=true
+//src/slp.lex/lex-code-method=0
+//src/slp.lex/lex-comply-jlex=false
+//src/slp.lex/lex-output=src
+//src/slp.lex/lex-skip-min=false
 //src/slp/slp.cup/cup-compact-red=false
 //src/slp/slp.cup/cup-debug=false
 //src/slp/slp.cup/cup-expected-conflicts=0

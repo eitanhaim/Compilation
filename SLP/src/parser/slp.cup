@@ -1,0 +1,238 @@
+package parser;
+
+import java_cup.runtime.*;
+
+parser code  {:
+	/** Causes the parser to print every token it reads.
+	 * This is useful for debugging.
+	 */
+	public boolean printTokens;
+	
+	private Lexer lexer;
+
+	public Parser(Lexer lexer) {
+		super(lexer);
+		this.lexer = lexer;
+	}
+	
+	public int getLine() {
+		return lexer.getLineNumber();
+	}
+	
+	public void syntax_error(Symbol s) {
+		Token tok = (Token) s;
+		System.out.println("Line " + tok.getLine()+": Syntax error; unexpected " + tok);
+	}
+:}
+
+// This is just for debugging
+scan with {:
+	Token t = lexer.next_token();
+	if (printTokens)
+		System.out.println(t.getLine() + ":" + t);
+	return t; 
+:};
+
+/** 
+ * TODO: 
+ * - VAR should be replaced with ID, CLASS_ID
+ * - check if unescapedString needed
+ */
+
+terminal SEMI, DOT, COMMA, PLUS, MINUS, MULTIPLY, DIVIDE, MOD, ASSIGN;
+terminal EQUAL, NEQUAL, GT, LT, GTE, LTE, LAND, LOR, LNEG, LB, RB, LP, RP, LCBR, RCBR;
+terminal CLASS, EXTENDS, STATIC, VOID, INT, BOOLEAN, STRING, RETURN, IF, ELSE, WHILE, BREAK, CONTINUE, THIS, NEW , LENGTH, TRUE, FALSE, NULL;  
+terminal READI, PRINT;
+terminal Integer INTEGER;
+terminal String VAR; /***** TODO: DELETE *****/
+terminal String QUOTE, ID, CLASS_ID; 
+terminal UMINUS;
+
+non terminal Expr expr;
+non terminal Stmt stmt;
+non terminal StmtList stmt_list;
+// TODO: add all of the non terminal
+
+precedence left LOR;
+precedence left LAND;
+precedence left PLUS, MINUS;
+precedence left DIVIDE, MULTIPLY;
+precedence left UMINUS;
+precedence left GT, LT, GTE, LTE;
+
+start with program;
+
+/* Classes */
+program 				    ::= class_declaration_opt;
+class_declaration_opt 	    ::= class_declaration_list | ;
+class_declaration_list 	    ::= class_declaration_list
+			    		      | class_declaration_list class_declaration
+			    		      ;
+class_declaration 		    ::= CLASS CLASS_ID extends_opt class_body;
+extends_opt 			    ::= EXTENDS CLASS_ID | ;
+class_body 				    ::= LCBR class_body_declartion_opt  RCBR;
+class_body_declartion_opt   ::= class_body_declartion_list | ;
+class_body_declartion_list  ::= class_body_declartion
+				    		  | class_body_declartion_list class_body_declartion
+				    		  ;
+class_body_declartion	    ::= field_declartion
+							  | method_declartion
+							  ;
+
+/* Field Declarations */
+field_declartion 		    ::= type variable_declarator_list SEMI;
+variable_declarator_list    ::= ID
+				   			  | variable_declarator_list COMMA ID;
+
+/* Method Declarations */
+method_declaration 		    ::= method_header method_body;
+methodHeader 			    ::= static_opt type method_declarator
+			   				  | static_opt VOID method_declarator
+			   				  ;
+static_opt 				    ::= STATIC | ;
+method_declarator 		    ::= ID LP formal_parameter_list_opt RP;
+formal_parameter_list_opt   ::= formal_parameter_list | ;
+formal_parameter_list 	    ::= formal_parameter
+					  		  | formal_parameter_list COMMA formal_parameter
+					  		  ;
+formal_parameter 		    ::= type ID;					  
+methodBody 				    ::= block; 
+type 					    ::= INT | BOOLEAN | STRING | CLASS_ID | type LB RB;
+
+/* Blocks and Statements */
+block 					    ::= LCBR statement_list_opt RCBR;
+statement_list_opt 		    ::= statement_list | ;
+statement_list 			    ::= statement:s
+			 				    {: RESULT = new StmtList(s); :}
+			 				  | statement_list:sl statement:s
+			 				    {: sl.addStmt(s); RESULT = sl; :}
+			 				  ;
+statement 				    ::= statement_without_trailing_substatement
+							  | if_then_statement
+							  | if_then_else_statement
+							  | while_statement
+							  ;
+statement_no_short_if	    ::= statement_without_trailing_substatement
+							  | if_then_else_statement_no_short_if
+							  | while_statement_no_short_if
+statement_without_trailing_substatement  ::= 
+							    block
+							  | location ASSIGN expr:e SEMI
+		 					    {: VarExpr ve = new VarExpr(v); RESULT = new AssignStmt(ve, e); :} // TODO: VAR -> location
+		 					  | call SEMI
+		 					  | PRINT LP expr:e RP SEMI
+		 					    {: RESULT = new PrintStmt(e); :}
+							  | BREAK SEMI
+							  | CONTINUE SEMI
+							  | RETURN expression_opt SEMI
+							  | type ID SEMI
+							  | type ID ASSIGN expression SEMI
+							  ;
+if_then_statement		    ::= IF LP expression RP statement;
+if_then_else_statement	    ::= IF LP expression RP statement_no_short_if
+							    ELSE statement;
+if_then_else_statement_no_short_if ::=
+							    IF LP expression RP statement_no_short_if
+							    ELSE statement_no_short_if;
+while_statement			    ::= WHILE LP expression RP statement;
+while_statement_no_short_if ::= WHILE LP expression RP statement_no_short_if 										   
+
+/* Expressions */
+expression_opt 				::= expression | ;
+expression					::= location
+							  | call 
+							  | READI LP RP
+								{: RESULT = new ReadIExpr(); :}
+							  | THIS
+							  | NEW CLASS_ID LP RP
+							  | NEW type LB expression RB
+							  | expression DOT LENGTH
+							  | binary_expression
+							  | unary_expression
+							  | literal
+							  | LP expr:e RP
+								{: RESULT = e; :}
+							  ;
+location					::= ID 
+							  | expression DOT ID
+							  | expression LB expression RB 
+call						::= static_call
+							  | virtual_call
+							  ;
+static_call					::= CLASS_ID DOT ID LP argument_list_opt RP
+virtual_call 				::= ID LP argument_list_opt RP	
+							  | expression DOT ID LP argument_list_opt RP							  
+argument_list_opt 			::= argument_list | ;
+argument_list				::= expression 
+							  | argument_list COMMA expression
+binary_expression 			::= expression:e1 PLUS:p expression:e2
+								{: RESULT = new BinaryOpExpr(e1, e2, Operator.PLUS);
+		   						   System.out.println("Reduced rule e1 + e2 for e1=" + e1 + " and e2="+e2);
+		 						:}
+							  | expression:e1 MINUS expression:e2
+								{: RESULT = new BinaryOpExpr(e1, e2, Operator.MINUS);
+		   						   System.out.println("Reduced rule e1 - e2 for e1=" + e1 + " and e2="+e2);
+		 						:}
+							  | expression:e1 MULTIPLY expression:e2
+								{: RESULT = new BinaryOpExpr(e1, e2, Operator.MULTIPLY);
+		   						   System.out.println("Reduced rule e1 * e2 for e1=" + e1 + " and e2="+e2);
+		 					    :}
+							  | expression:e1 DIVIDE expression:e2
+								{: RESULT = new BinaryOpExpr(e1, e2, Operator.DIVIDE);
+		   						   System.out.println("Reduced rule e1 / e2 for e1=" + e1 + " and e2="+e2);
+		 						:}
+		 					  | expression:e1 MOD expression:e2
+		 					  	{: RESULT = new BinaryOpExpr(e1, e2, Operator.MOD);
+		 					  	   System.out.println("Reduced rule e1 % e2 for e1=" + e1 + " and e2="+e2);
+		 						:}
+							  | expr:e1 LAND expr:e2
+								{: RESULT = new BinaryOpExpr(e1, e2, Operator.LAND);
+		  						   System.out.println("Reduced rule e1 && e2 for e1=" + e1 + " and e2="+e2);
+		 						:}
+							  | expr:e1 LOR expr:e2
+								{: RESULT = new BinaryOpExpr(e1, e2, Operator.LOR);
+		   						   System.out.println("Reduced rule e1 || e2 for e1=" + e1 + " and e2="+e2);
+		 						:}
+		 					  | expr:e1 EQUAL expr:e2
+								{: RESULT = new BinaryOpExpr(e1, e2, Operator.EQUAL);
+		   						   System.out.println("Reduced rule e1 == e2 for e1=" + e1 + " and e2="+e2);
+		 						:}
+		 					  | expr:e1 NEQUAL expr:e2
+								{: RESULT = new BinaryOpExpr(e1, e2, Operator.NEQUAL);
+		   						   System.out.println("Reduced rule e1 != e2 for e1=" + e1 + " and e2="+e2);
+		 						:}	
+							  | expr:e1 LT expr:e2
+								{: RESULT = new BinaryOpExpr(e1, e2, Operator.LT);
+		   						   System.out.println("Reduced rule e1 < e2 for e1=" + e1 + " and e2="+e2);
+		 						:}
+							  | expr:e1 GT expr:e2
+								{: RESULT = new BinaryOpExpr(e1, e2, Operator.GT);
+		   						   System.out.println("Reduced rule e1 > e2 for e1=" + e1 + " and e2="+e2);
+		 						:}
+							  | expr:e1 LTE expr:e2
+								{: RESULT = new BinaryOpExpr(e1, e2, Operator.LTE);
+		  						   System.out.println("Reduced rule e1 <= e2 for e1=" + e1 + " and e2="+e2);
+								:}
+							  | expr:e1 GTE expr:e2
+								{: RESULT = new BinaryOpExpr(e1, e2, Operator.GTE);
+		   						   System.out.println("Reduced rule e1 >= e2 for e1=" + e1 + " and e2="+e2);
+		 						:}
+unary_expression            ::= MINUS expr:e1
+								{: RESULT = new UnaryOpExpr(e1, Operator.MINUS); :} %prec UMINUS
+								LNEG expr:e1
+								{: RESULT = new UnaryOpExpr(e1, Operator.LNEG); :}
+		
+literal						::= INTEGER:n
+								{: RESULT = new NumberExpr(n.intValue()); :}
+							  | QUOTE
+							  | TRUE
+							  | FALSE
+							  | NULL
+							  ;
+		
+		
+/******************************/		
+		| VAR:v
+		{: RESULT = new VarExpr(v); :}
+;
+/******************************/		

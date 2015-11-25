@@ -1,0 +1,33 @@
+package ast;
+
+/**
+ * An AST node for an array length expression.
+ */
+public class LengthExpr extends Expr {
+	private Expr array;
+
+	/**
+	 * Constructs a new array length expression node.
+	 * 
+	 * @param array  Expression representing an array.
+	 */
+	public LengthExpr(Expr array) {
+		super(array.getLine());
+		this.array = array;
+	}
+
+	public Expr getArray() {
+		return array;
+	}
+
+	@Override
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
+	
+	@Override
+	public <DownType, UpType> UpType accept(
+			PropagatingVisitor<DownType, UpType> visitor, DownType context) {
+		return visitor.visit(this, context);
+	}
+}
