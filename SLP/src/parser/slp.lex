@@ -102,10 +102,6 @@ StringCharacter = [^\r\n\"\\]
 "||"				{ return new Token(yyline, yytext(), sym.LOR); }
 "!"					{ return new Token(yyline, yytext(), sym.LNEG); }
 
-/* library functions */
-"readi" 			{ return new Token(yyline, yytext(), sym.READI); }
-"print" 			{ return new Token(yyline, yytext(), sym.PRINT); }
-
 /* string literal */
 \"                  { string.setLength(0); yybegin(STRING); }  
 

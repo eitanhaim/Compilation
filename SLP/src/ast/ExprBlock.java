@@ -11,9 +11,9 @@ public class ExprBlock extends Expr {
 	 * 
 	 * @param expr  The expression.
 	 */
-	public ExprBlock(Expr expression) {
-		super(expression.getLine());
-		this.expr = expression;
+	public ExprBlock(Expr expr) {
+		super(expr.getLine());
+		this.expr = expr;
 	}
 
 	public Expr getExpr() {
@@ -21,13 +21,7 @@ public class ExprBlock extends Expr {
 	}
 	
 	@Override
-	public void accept(Visitor visitor) {
-		visitor.visit(this);
-	}
-	
-	@Override
-	public <DownType, UpType> UpType accept(
-			PropagatingVisitor<DownType, UpType> visitor, DownType context) {
-		return visitor.visit(this, context);
+	public Object accept(Visitor visitor) {
+		return visitor.visit(this);
 	}
 }

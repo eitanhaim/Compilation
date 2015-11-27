@@ -5,7 +5,6 @@ package ic;
  * Includes methods for creating a string representation of each type of value.
  */
 public enum LiteralType {
-
 	INTEGER(DataType.INT.getDefaultValue(), "Integer literal"), 
 	STRING(DataType.STRING.getDefaultValue(), "String literal") {
 		private void replaceEscapeSequences(StringBuffer string) {

@@ -1,12 +1,11 @@
 package parser;
 
 import java.io.*;
-
-import ToDelete.StmtList;
+import ast.*;
 import java_cup.runtime.*;
 
-/** The entry point of the SLP (Straight Line Program) application.
- *
+/** 
+ * The entry point of the SLP (Straight Line Program) application.
  */
 public class Main {
 	private static boolean printtokens = false;
@@ -40,21 +39,18 @@ public class Main {
 			
 			Symbol parseSymbol = parser.parse();
 			System.out.println("Parsed " + args[0] + " successfully!");
-			StmtList root = (StmtList) parseSymbol.value;
+			Program root = (Program) parseSymbol.value;
 			
 			// Pretty-print the program to System.out
-			PrettyPrinter printer = new PrettyPrinter(root);
-			printer.print();
-			
-			// Interpret the program
-			SLPEvaluator evaluator = new SLPEvaluator(root);
-			evaluator.evaluate();
+			PrettyPrinter printer = new PrettyPrinter(args[0], root);
+			printer.print();	
 		} catch (Exception e) {
 			System.out.print(e);
 		}
 	}
 	
-	/** Prints usage information about this application to System.out
+	/** 
+	 * Prints usage information about this application to System.out
 	 */
 	public static void printUsage() {
 		System.out.println("Usage: slp file [-printtokens]");

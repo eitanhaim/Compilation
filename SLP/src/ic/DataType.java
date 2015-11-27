@@ -4,7 +4,6 @@ package ic;
  * An enumeration containing all of the primitive data types in the IC language.
  */
 public enum DataType {
-
 	INT(0, "int"), 
 	BOOLEAN(false, "boolean"), 
 	STRING(null, "string"), 
@@ -35,5 +34,4 @@ public enum DataType {
 	public String getDescription() {
 		return description;
 	}
-
 }

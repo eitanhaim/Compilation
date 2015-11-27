@@ -1,30 +1,53 @@
 package ast;
 
 /**
- * Pretty printing visitor - travels along the AST and prints info about each
- * node, in an easy-to-comprehend format.
+ * Pretty printing visitor - travels along the AST and prints info about each node,
+ * in an easy-to-comprehend format.
  */
 public class PrettyPrinter implements Visitor {
 	private int depth = 0; // depth of indentation
 	private String ICFilePath;
+	private ASTNode root;
 
 	/**
 	 * Constructs a new pretty printer visitor.
 	 * 
 	 * @param ICFilePath  The path + name of the IC file being compiled.
+	 * @param root The root of the AST.
 	 */
-	public PrettyPrinter(String ICFilePath) {
+	public PrettyPrinter(String ICFilePath, ASTNode root) {
 		this.ICFilePath = ICFilePath;
+		this.root = root;
+	}
+	
+	/** 
+	 * Prints the AST with the given root.
+	 */
+	public void print() {
+		System.out.println(root.accept(this));
 	}
 
+	/**
+	 * Appends to output, an indentation as well as node's line number,
+	 * according to the current depth and the specified node respectively.
+	 * 
+	 * @param output The output buffer.
+	 * @param node   The AST node that is visited now.
+	 */
 	private void indent(StringBuffer output, ASTNode node) {
 		output.append("\n");
-		for (int i = 0; i < depth; ++i)
+		for (int i = 0; i < depth; i++)
 			output.append(" ");
 		if (node != null)
 			output.append(node.getLine() + ": ");
 	}
 
+	/**
+	 * Appends an indentation to output according to the current depth.
+	 * 
+	 * @param output The output buffer.
+	 * @param node   The AST node that is visited now.
+	 */
 	private void indent(StringBuffer output) {
 		indent(output, null);
 	}
@@ -149,7 +172,7 @@ public class PrettyPrinter implements Visitor {
 		output.append("Assignment statement");
 		depth += 2;
 		output.append(assignment.getVariable().accept(this));
-		output.append(assignment.getAssignment().accept(this));
+		output.append(assignment.getAssignVal().accept(this));
 		depth -= 2;
 		return output.toString();
 	}
@@ -188,10 +211,10 @@ public class PrettyPrinter implements Visitor {
 		if (ifStatement.hasElse())
 			output.append(", with Else operation");
 		depth += 2;
-		output.append(ifStatement.getCondition().accept(this));
-		output.append(ifStatement.getOperation().accept(this));
+		output.append(ifStatement.getCond().accept(this));
+		output.append(ifStatement.getStmt().accept(this));
 		if (ifStatement.hasElse())
-			output.append(ifStatement.getElseOperation().accept(this));
+			output.append(ifStatement.getElseStmt().accept(this));
 		depth -= 2;
 		return output.toString();
 	}
@@ -202,8 +225,8 @@ public class PrettyPrinter implements Visitor {
 		indent(output, whileStatement);
 		output.append("While statement");
 		depth += 2;
-		output.append(whileStatement.getCondition().accept(this));
-		output.append(whileStatement.getOperation().accept(this));
+		output.append(whileStatement.getCond().accept(this));
+		output.append(whileStatement.getStmt().accept(this));
 		depth -= 2;
 		return output.toString();
 	}
@@ -340,7 +363,7 @@ public class PrettyPrinter implements Visitor {
 		return output.toString();
 	}
 
-	public Object visit(Length length) {
+	public Object visit(LengthExpr length) {
 		StringBuffer output = new StringBuffer();
 
 		indent(output, length);
@@ -351,7 +374,7 @@ public class PrettyPrinter implements Visitor {
 		return output.toString();
 	}
 
-	public Object visit(MathBinaryOp binaryOp) {
+	public Object visit(MathBinaryOpExpr binaryOp) {
 		StringBuffer output = new StringBuffer();
 
 		indent(output, binaryOp);
@@ -364,7 +387,7 @@ public class PrettyPrinter implements Visitor {
 		return output.toString();
 	}
 
-	public Object visit(LogicalBinaryOp binaryOp) {
+	public Object visit(LogicalBinaryOpExpr binaryOp) {
 		StringBuffer output = new StringBuffer();
 
 		indent(output, binaryOp);
@@ -377,7 +400,7 @@ public class PrettyPrinter implements Visitor {
 		return output.toString();
 	}
 
-	public Object visit(MathUnaryOp unaryOp) {
+	public Object visit(MathUnaryOpExpr unaryOp) {
 		StringBuffer output = new StringBuffer();
 
 		indent(output, unaryOp);
@@ -389,7 +412,7 @@ public class PrettyPrinter implements Visitor {
 		return output.toString();
 	}
 
-	public Object visit(LogicalUnaryOp unaryOp) {
+	public Object visit(LogicalUnaryOpExpr unaryOp) {
 		StringBuffer output = new StringBuffer();
 
 		indent(output, unaryOp);
@@ -416,7 +439,7 @@ public class PrettyPrinter implements Visitor {
 		indent(output, expressionBlock);
 		output.append("Parenthesized expression");
 		++depth;
-		output.append(expressionBlock.getExpression().accept(this));
+		output.append(expressionBlock.getExpr().accept(this));
 		--depth;
 		return output.toString();
 	}

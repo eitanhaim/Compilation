@@ -4,7 +4,6 @@ package ic;
  * An enumeration containing all of the unary operation types in the IC language.
  */
 public enum UnaryOperator {
-
 	UMINUS("-", "unary subtraction"), 
 	LNEG("!", "logical negation");
 

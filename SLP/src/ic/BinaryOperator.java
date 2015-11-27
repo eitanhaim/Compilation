@@ -4,7 +4,6 @@ package ic;
  * An enumeration containing all of the binary operation types in the IC language.
  */
 public enum BinaryOperator {
-
 	PLUS("+", "addition"),
 	MINUS("-", "subtraction"),
 	MULTIPLY("*", "multiplication"),

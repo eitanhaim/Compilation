@@ -22,7 +22,7 @@ public abstract class Type extends ASTNode {
 	public int getDimension() {
 		return dimension;
 	}
-
+	
 	public void incrementDimension() {
 		dimension++;
 	}

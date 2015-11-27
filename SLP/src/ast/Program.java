@@ -6,7 +6,7 @@ import java.util.List;
  * Root AST node for an IC program.
  */
 public class Program extends ASTNode {
-	private List<ICClass> classes;
+	private List<ICClass> classes; 
 
 	/**
 	 * Constructs a new program node.
@@ -23,13 +23,7 @@ public class Program extends ASTNode {
 	}
 
 	@Override
-	public void accept(Visitor visitor) {
-		visitor.visit(this);
-	}
-	
-	@Override
-	public <DownType, UpType> UpType accept(
-			PropagatingVisitor<DownType, UpType> visitor, DownType context) {
-		return visitor.visit(this, context);
+	public Object accept(Visitor visitor) {
+		return visitor.visit(this);
 	}
 }

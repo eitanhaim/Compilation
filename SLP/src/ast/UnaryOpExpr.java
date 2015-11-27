@@ -5,7 +5,7 @@ import ic.UnaryOperator;;
 /**
  * Abstract base class for unary operation AST nodes.
  */
-public abstract class UnaryOp extends Expr {
+public abstract class UnaryOpExpr extends Expr {
 	private UnaryOperator operator;
 	private Expr operand;
 
@@ -14,7 +14,7 @@ public abstract class UnaryOp extends Expr {
 	 * @param operator  The operator.
 	 * @param operand   The operand.
 	 */
-	protected UnaryOp(UnaryOperator operator, Expr operand) {
+	protected UnaryOpExpr(UnaryOperator operator, Expr operand) {
 		super(operand.getLine());
 		this.operator = operator;
 		this.operand = operand;

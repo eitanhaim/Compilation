@@ -5,36 +5,30 @@ package ast;
  */
 public class AssigmStmt extends Stmt {
 	private LocationExpr variable;;
-	private Expr rhs;
+	private Expr assignVal;
 
 	/**
 	 * Constructs a new assignment statement node.
 	 * 
-	 * @param variable  Variable to assign a value to.
-	 * @param rhs       Value to assign.
+	 * @param variable   Variable to assign a value to.
+	 * @param assignVal  Value to assign.
 	 */
-	public AssigmStmt(LocationExpr variable, Expr rhs) {
+	public AssigmStmt(LocationExpr variable, Expr assignVal) {
 		super(variable.getLine());
 		this.variable = variable;
-		this.rhs = rhs;
+		this.assignVal = assignVal;
 	}
 
 	public LocationExpr getVariable() {
 		return variable;
 	}
 
-	public Expr getRhs() {
-		return rhs;
+	public Expr getAssignVal() {
+		return assignVal;
 	}
 	
 	@Override
-	public void accept(Visitor visitor) {
-		visitor.visit(this);
-	}
-	
-	@Override
-	public <DownType, UpType> UpType accept(
-			PropagatingVisitor<DownType, UpType> visitor, DownType context) {
-		return visitor.visit(this, context);
+	public Object accept(Visitor visitor) {
+		return visitor.visit(this);
 	}
 }
