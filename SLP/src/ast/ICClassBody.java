@@ -33,7 +33,7 @@ public class ICClassBody {
 		fields.addAll(newFields);
 	}
 	
-	public void addMethod(List<Method> method) {
-		methods.addAll(method);
+	public void addMethod(Method method) {
+		methods.add(method);
 	}
 }

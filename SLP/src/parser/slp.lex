@@ -5,17 +5,19 @@ import java_cup.runtime.*;
 %%
 
 %cup
-%class Lexer
-%type Token
 %line
-%scanerror RuntimeException
+%column
+%public
+%type Token
+%class Lexer
+%function next_token
 
 /****************/
 /* DECLARATIONS */
 /****************/
 %{
 	StringBuilder string = new StringBuilder();
-	public int getLineNumber() { return yyline+1; }
+	public int getLineNumber() { return yyline + 1; }
 %}
 
 /***********************/
@@ -35,7 +37,6 @@ DocumentationComment = "/**" {CommentContent} "*"+ "/"
 CommentContent       = ( [^*] | \*+ [^/*] )*
 
 /* identifiers */
-VAR=[a-zA-Z]+ /***** TODO: DELETE *****/ 
 IDENTIFIER		 = [a-z_][A-Za-z_0-9]*
 CLASS_IDENTIFIER = [A-Z][A-Za-z_0-9]*
 
@@ -109,7 +110,6 @@ StringCharacter = [^\r\n\"\\]
 {INTEGER}			{ return new Token(yyline, "INTEGER", sym.INTEGER, new Integer(yytext())); }
 					 
 /* identifiers */
-{VAR} 				{ return new Token(yyline, "VAR", sym.VAR, yytext()); } /***** TODO: DELETE *****/  
 {IDENTIFIER}		{ return new Token(yyline, "ID", sym.ID, yytext()); }
 {CLASS_IDENTIFIER}	{ return new Token(yyline, "CLASS_ID", sym.CLASS_ID, yytext()); }
 					

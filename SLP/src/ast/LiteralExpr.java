@@ -16,7 +16,7 @@ public class LiteralExpr extends Expr {
 	 * @param type  Literal type.
 	 */
 	public LiteralExpr(int line, LiteralType type) {
-		super(line);
+		super(line);		
 		this.type = type;
 		value = type.getValue();
 	}
