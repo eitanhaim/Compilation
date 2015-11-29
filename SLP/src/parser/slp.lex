@@ -3,7 +3,6 @@ package parser;
 import java_cup.runtime.*;
 
 %%
-
 %cup
 %line
 %column
@@ -11,6 +10,7 @@ import java_cup.runtime.*;
 %type Token
 %class Lexer
 %function next_token
+%scanerror RuntimeException
 
 /****************/
 /* DECLARATIONS */
