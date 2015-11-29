@@ -2,30 +2,55 @@ package parser;
 
 import java_cup.runtime.Symbol;
 
-/** Adds line number and name information to scanner symbols.
+/** 
+ * Adds line number and name information to scanner symbols.
  */
 public class Token extends Symbol {
-	private final int line;
-	private final String name;
+	private String name;
+	private int lineNumber;
+	private int columnNumber;
 
-	public Token(int line, String name, int id, Object value) {
-		super(id, value);
+	public Token(int id, Object value, int line, int column) {
+		this(id, null, value, line, column);
+	}
+
+	public Token(int id, String name, Object value, int line, int column) {
+		super(id, line + 1, column + 1, value);
+
 		this.name = name;
-		this.line = line + 1;
+		this.lineNumber = line;
+		this.columnNumber = column;
 	}
-	
-	public Token(int line, String name, int id) {
-		super(id, null);
-		this.name = name;
-		this.line = line + 1;
+
+	public int getId() {
+		return sym;
 	}
-	
-	public String toString() {
-		String val = value != null ? "(" + value + ")" : "";
-		return name +  val;
+
+	public String getName() {
+		return this.name;
 	}
-	
+
+	public Object getValue() {
+		return value;
+	}
+
 	public int getLine() {
-		return line;
+		return this.lineNumber;
+	}
+
+	public int getColumn() {
+		return this.columnNumber;
+	}
+
+	public String toString() {
+		String val = "";
+
+		if (name != null) {
+			val = value + "\t" + name;
+		} else {
+			val = value + "\t" + value;
+		}
+
+		return val + "\t" + lineNumber + ":" + columnNumber;
 	}
 }

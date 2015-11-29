@@ -20,13 +20,13 @@ parser code  {:
 		this.lexer = lexer;
 	}
 	
-	/*public int getLine() {
+	public int getLine() {
 		return lexer.getLineNumber();
-	}*/
+	}
 	
 	public void syntax_error(Symbol s) {
 		Token tok = (Token) s;
-		System.out.println("Line " + tok.getLine()+": Syntax error; unexpected " + tok);
+		System.out.println("Line " + tok.getLine()+": Syntax error; unexpected " + tok.getValue());
 	}
 :}
 
@@ -93,6 +93,7 @@ start with program;
 // Classes 
 program ::= class_list:cl
 	{: RESULT = new Program(cl); :} 
+	| error
 ;
 class_list ::= // empty
 	{: RESULT = new ArrayList<ICClass>(); :}
@@ -120,6 +121,7 @@ field_list ::= type:t id_list:idl SEMI
        } 
        RESULT = fieldList;
 	:}
+	| error SEMI
 ;
 id_list ::= ID:id
     {: List<String> idList = new ArrayList<String>();
@@ -135,6 +137,7 @@ method ::= static_method:sm
 	{: RESULT = sm; :}
 	| virtual_method:vm
 	{: RESULT = vm; :}
+	| error
 ;
 static_method ::= STATIC type:t ID:id LP formal_list:fl RP  LCBR stmt_list:sl RCBR
 	{: RESULT = new StaticMethod(t, id, fl, sl); :}
@@ -176,6 +179,7 @@ stmt_list ::= // empty
 	{: RESULT = new ArrayList<Stmt>(); :}
 	| stmt_list:sl stmt:s
 	{: sl.add(s); RESULT = sl; :}
+	| stmt_list:sl error
 ;
 stmt ::= location:l ASSIGN expr:e SEMI
 	{: RESULT = new AssigmStmt(l, e); :}
@@ -292,8 +296,10 @@ binary_op_expr ::= expr:e1 PLUS expr:e2
 ;	
 unary_op_expr ::= MINUS expr:e
 	{: RESULT = new MathUnaryOpExpr(UnaryOperator.UMINUS, e); :} %prec UMINUS
-	|	LNEG expr:e
+	| LNEG expr:e
 	{: RESULT = new LogicalUnaryOpExpr(UnaryOperator.LNEG, e); :}
+	| MINUS error
+	| LNEG error
 ;
 
 literal ::= INTEGER:i

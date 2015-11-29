@@ -1,6 +1,7 @@
 package parser;
 
 import java.io.*;
+
 import ast.*;
 import java_cup.runtime.*;
 
@@ -15,6 +16,9 @@ public class Main {
 	 * @param args Should be the name of the file containing an SLP.
 	 */
 	public static void main(String[] args) {
+		FileReader txtFile = null;
+		Symbol parseSymbol = null;
+		
 		try {
 			if (args.length == 0) {
 				System.out.println("Error: Missing input file argument!");
@@ -32,21 +36,36 @@ public class Main {
 			}
 			
 			// Parse the input file
-			FileReader txtFile = new FileReader(args[0]);
+			txtFile = new FileReader(args[0]);
 			Lexer scanner = new Lexer(txtFile);
 			Parser parser = new Parser(scanner);
 			parser.printTokens = printtokens;
 			
-			Symbol parseSymbol = parser.parse();
+			parseSymbol = parser.parse();
 			System.out.println("Parsed " + args[0] + " successfully!");
 			Program root = (Program) parseSymbol.value;
 			
 			// Pretty-print the program to System.out
 			PrettyPrinter printer = new PrettyPrinter(args[0], root);
 			printer.print();	
-		} catch (Exception e) {
-			System.out.print(e);
-		}
+		} catch (FileNotFoundException fnfException) {
+            System.err.println("The file " + args[0] + " not found");
+        } catch (LexicalError lexicalError) {
+            System.err.println("LexicalError: " + lexicalError.getMessage());
+        } catch (SyntaxError syntaxError) {
+            System.err.println("SyntaxError: " + syntaxError.getMessage());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.err.println("IO Error (brutal exit) " + ex.getMessage() + " " + parseSymbol.value);
+        } finally {
+            try {
+                if (txtFile != null) {
+                    txtFile.close();
+                }
+            } catch (IOException ex) {
+                System.err.println("txtFile.close()");
+            }
+        }
 	}
 	
 	/** 
