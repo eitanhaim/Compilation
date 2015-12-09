@@ -45,6 +45,9 @@ public class Main {
 			System.out.println("Parsed " + args[0] + " successfully!");
 			Program root = (Program) parseSymbol.value;
 			
+			SemanticAnalayzer sa = new SemanticAnalayzer(root);
+			root.accept(sa);
+			
 			// Pretty-print the program to System.out
 			PrettyPrinter printer = new PrettyPrinter(args[0], root);
 			printer.print();	
@@ -66,6 +69,7 @@ public class Main {
                 System.err.println("txtFile.close()");
             }
         }
+		
 	}
 	
 	/** 
