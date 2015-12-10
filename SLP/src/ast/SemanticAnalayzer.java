@@ -1,6 +1,7 @@
 package ast;
 
 import java.util.*;
+import ic.*;
 
 
 public class SemanticAnalayzer implements Visitor{
@@ -200,7 +201,7 @@ public Object visit(ICClass icClass)
 		
 		if (type(assignment.getVariable())!= type(assignment.getAssignVal()))
 		{
-			System.err.println("Error: Assignment of different types.");
+			System.err.println("Error: Assignment of different types");
 			//System.exit(1);
 		}
 		
@@ -329,28 +330,24 @@ public Object visit(ICClass icClass)
 	public Object visit(ExprBlock expressionBlock)
 	{
 		return null;
-		//SemanticAnalayzer sa = (SemanticAnalayzer) expressionBlock.accept(this);
-		//return new SemanticAnalayzer(expressionBlock, sa.myVars);
 	}
 	
-	 
-	 public Type type(BinaryOpExpr binop)
+
+public String type(Expr expr)
 	 {
-		 if (type(binop.getFirstOperand()) != type(binop.getSecondOperand()))
-    		{
-			  System.err.println("Error: operation"+binop.getOperator()+"on different types");
-	    	}
-		 return type(binop.getFirstOperand());
-	 }
-	 
-	 public  Type type(UnaryOpExpr unop)
-	 {
-		 return type(unop.getOperand());
-	 }
-	 
-	 public Type type(Expr expr){return null;} //this is for syntactic reasons. however, it is impossible to instatiate Expr, so this method is never used
-	 
-	 //public Type type()
+		 if (expr instanceof VarLocationExpr)
+		 {
+			 VarLocationExpr varLocationExpr = (VarLocationExpr) expr;
+			 return getType(varLocationExpr.getName()).getName();
+		 }
+		 else if (expr instanceof LiteralExpr)
+		 {
+			 LiteralExpr literalExpr = (LiteralExpr) expr;
+			 return literalExpr.getType().getDescription().split(" ")[0];
+		 }
+		 System.out.println("The class is:"+expr.getClass().toString());
+		 return null;
+	} 
 
 	 
 }
