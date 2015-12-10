@@ -13,6 +13,9 @@ public class SemanticAnalayzer implements Visitor{
 	private int in_loop = 0;//depth of loops - loop inside a loop inside a loop, etc.
 	private boolean in_method = false;
 	private boolean in_virtual_method = false;
+	private boolean break_used = false;//indicates if we've already used break in the loop - this is important for implementing nested loops
+	private boolean continue_used = false;
+	private boolean return_used = false;
 	private Type return_type = null; //expected return value of a method, if in_methdo is set true
 	
 	
@@ -198,9 +201,9 @@ public Object visit(ICClass icClass)
 	}
 	public Object visit(AssigmStmt assignment)
 	{
-		
-		if (type(assignment.getVariable())!= type(assignment.getAssignVal()))
+		if (!type(assignment.getVariable()).equals(type(assignment.getAssignVal())))
 		{
+			System.out.println("first ="+type(assignment.getVariable())+" and second ="+type(assignment.getAssignVal()));
 			System.err.println("Error: Assignment of different types");
 			//System.exit(1);
 		}
@@ -218,9 +221,9 @@ public Object visit(ICClass icClass)
 		{
 			System.err.println("Error: return outside a mehtod");
 		}
-		if (this.return_type != this.rootType)
+		if (! this.return_type.getName().equals(type(returnStatement.getValue())))
 		{
-			System.err.println("Error: expected other return type");
+			System.err.println("Error: expected other return type" + " a = "+this.return_type.getName()+" b ="+type(returnStatement.getValue()));
 		}
 		return null;
 	}
@@ -250,6 +253,11 @@ public Object visit(ICClass icClass)
 	}
 	public Object visit(ContinueStmt continueStatement)
 	{
+		if (this.continue_used)
+		{
+			System.err.println("Error: continue already used");
+			return null;
+		}
 		if (this.in_loop == 0)
 		{
 			System.err.println("Error: continue statement outside loop");
@@ -343,11 +351,34 @@ public String type(Expr expr)
 		 else if (expr instanceof LiteralExpr)
 		 {
 			 LiteralExpr literalExpr = (LiteralExpr) expr;
-			 return literalExpr.getType().getDescription().split(" ")[0];
+			 return MyToLowercase(literalExpr.getType().getDescription().split(" ")[0]);
 		 }
-		 System.out.println("The class is:"+expr.getClass().toString());
+		 System.out.println("The class is:"+expr.getClass().toString()+" for the expr: ");
 		 return null;
 	} 
+	
+public String MyToUppercase(String x)
+{
+	if (x.equals("int"))
+		return "Integer";
+	else if (x.equals("boolean"))
+		return "Boolean";
+	else if (x.equals("string"))
+		return "String";
+	else
+		return x;
+}
 
-	 
+public String MyToLowercase(String x)
+{
+	if (x.equals("Integer"))
+		return "int";
+	else if(x.equals("Boolean"))
+		return "boolean";
+	else if (x.equals("String"))
+		return "string";
+	else
+		return x;
+}
+	
 }
