@@ -6,7 +6,8 @@ import java.util.*;
 public class SemanticAnalayzer implements Visitor{
 	private ASTNode root;
 	//private PriorityQueue<HashMap<String, Type>> myVars = new PriorityQueue<HashMap<String, Type>> (); //map variable -> type
-	private HashMap<String, PriorityQueue<Type>> myVars = new HashMap<String, PriorityQueue<Type>> ();
+	//private HashMap<String, PriorityQueue<Type>> myVars = new HashMap<String, PriorityQueue<Type>> ();
+	private HashMap<String, Stack<Type>> myVars = new HashMap<String, Stack<Type>> ();
 	private Type rootType = null;
 	private int in_loop = 0;//depth of loops - loop inside a loop inside a loop, etc.
 	private boolean in_method = false;
@@ -14,7 +15,7 @@ public class SemanticAnalayzer implements Visitor{
 	private Type return_type = null; //expected return value of a method, if in_methdo is set true
 	
 	
-//retrieve first non-null type from queue
+//retrieve first non-null type from stack
 public Type getType(String variable)//it's static since this depends on the location in the code
 {
 	for (Type type : this.myVars.get(variable))
@@ -25,12 +26,22 @@ public Type getType(String variable)//it's static since this depends on the loca
 	return null;
 }
 
-//pop from each queue
-public void popType()
+//pop from each stack
+public void popAll()
 {
 	for (String string: this.myVars.keySet())
 	{
-		this.myVars.get(string).poll();
+		this.myVars.get(string).pop();
+	}
+}
+
+
+public void addAll()
+{
+	for (String string : this.myVars.keySet())
+	{
+		add_variable(string, null);
+		//this.myVars.get(string).add(null);
 	}
 }
 	
@@ -76,26 +87,25 @@ public void add_variable(Method method)
 	add_variable(method.getName(), method.getType());
 }
 
+public void add_variable(String name, int line)
+{
+	add_variable(name, new UserType(line, name));
+}
 
 public void add_variable(String name, Type type)
 {
-	PriorityQueue<Type> new_queue = new PriorityQueue<Type>(); 
-	new_queue.add(type);
-	this.myVars.put(name, new_queue);
-	/*
-	if (this.myVars.containsKey(name))
+	
+	Stack<Type> new_stack = this.myVars.get(name);
+	if (new_stack == null)
 	{
-		System.out.println(this.myVars.get(name));
-		System.out.println("a");
-		this.myVars.get(name).add(type);
-		System.out.println("b");
+		new_stack = new Stack<Type>();
 	}
-	else
+	else if (new_stack.pop()!=null && type != null) 
 	{
-		PriorityQueue<Type> new_queue = new PriorityQueue<Type>(); 
-		new_queue.add(type);
-		this.myVars.put(name, new_queue);
-	}*/
+		System.out.println("Error: variable already exists in this block");
+	}
+	new_stack.add(type);
+	this.myVars.put(name, new_stack);
 }
 
 public Object visit(ICClass icClass)
@@ -125,7 +135,7 @@ public Object visit(ICClass icClass)
 		this.return_type = method.getType();
 		this.in_method = true;
 		this.in_virtual_method = true;
-		add_variable(method.getName(), new UserType(method.getLine(), method.getName()));
+		add_variable(method.getName(), method.getLine());
 		for (Formal formal : method.getFormals())
 		{
 			formal.accept(this);
@@ -144,7 +154,7 @@ public Object visit(ICClass icClass)
 	{
 		this.return_type = method.getType();
 		this.in_method = true;
-		add_variable(method.getName(), new UserType(method.getLine(), method.getName()));
+		add_variable(method.getName(), method.getLine());
 		for (Formal formal : method.getFormals())
 		{
 			formal.accept(this);
@@ -241,10 +251,12 @@ public Object visit(ICClass icClass)
 	}
 	public Object visit(StmtBlock statementsBlock)
 	{
+		addAll();
 		for (Stmt stmt : statementsBlock.getStatements())
 		{
 			stmt.accept(this);
 		}
+		popAll();
 		return null;
 	}
 	public Object visit(LocalVarStmt localVariable)
