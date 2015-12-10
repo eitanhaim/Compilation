@@ -100,9 +100,17 @@ public void add_variable(String name, Type type)
 	{
 		new_stack = new Stack<Type>();
 	}
-	else if (new_stack.pop()!=null && type != null) 
+	else
 	{
-		System.out.println("Error: variable already exists in this block");
+		Type prevType = new_stack.pop();
+		if (prevType != null && type != null)
+		{
+			System.err.println("Error: variable "+name+" already exists in this block");
+		}
+	}
+	//else if (new_stack.pop()!=null && type != null) 
+	{
+		//System.out.println("Error: variable "+name+" already exists in this block");
 	}
 	new_stack.add(type);
 	this.myVars.put(name, new_stack);
@@ -110,7 +118,7 @@ public void add_variable(String name, Type type)
 
 public Object visit(ICClass icClass)
 	{
-		List <SemanticAnalayzer> res = new ArrayList<SemanticAnalayzer>();
+		//List <SemanticAnalayzer> res = new ArrayList<SemanticAnalayzer>();
 		
 		for (Field field : icClass.getFields())
 		{
@@ -119,17 +127,19 @@ public Object visit(ICClass icClass)
 		}
 		for (Method method : icClass.getMethods())
 		{
-			add_variable(method);
+			//add_variable(method);
 			method.accept(this);
 		}
 		//add_variable(icClass.getName(), new UserType(this.root.getLine(),i));
 		return null;
 	}
+
 	public Object visit(Field field)
 	{
 		add_variable(field);
 		return null;
 	}
+	
 	public Object visit(VirtualMethod method)
 	{
 		this.return_type = method.getType();
@@ -139,7 +149,6 @@ public Object visit(ICClass icClass)
 		for (Formal formal : method.getFormals())
 		{
 			formal.accept(this);
-			add_variable(formal.getName(), formal.getType());
 		}
 		for (Stmt stmt : method.getStatements())
 		{
@@ -150,6 +159,7 @@ public Object visit(ICClass icClass)
 		this.return_type = null;
 		return null;
 	}
+	
 	public Object visit(StaticMethod method)
 	{
 		this.return_type = method.getType();
@@ -158,9 +168,8 @@ public Object visit(ICClass icClass)
 		for (Formal formal : method.getFormals())
 		{
 			formal.accept(this);
-			add_variable(formal.getName(), formal.getType());
 		}
-		for (Stmt  stmt : method.getStatements())
+		for (Stmt stmt : method.getStatements())
 		{
 			stmt.accept(this);
 		}
@@ -179,6 +188,7 @@ public Object visit(ICClass icClass)
 	}
 	public Object visit(PrimitiveType type)
 	{
+		add_variable(type.getName(), type.getLine());
 		return null;
 	}
 	public Object visit(UserType type)
@@ -190,7 +200,7 @@ public Object visit(ICClass icClass)
 		
 		if (type(assignment.getVariable())!= type(assignment.getAssignVal()))
 		{
-			System.out.println("Error: Assignment of different types.");
+			System.err.println("Error: Assignment of different types.");
 			//System.exit(1);
 		}
 		
@@ -205,11 +215,11 @@ public Object visit(ICClass icClass)
 	{
 		if (!this.in_method)
 		{
-			System.out.println("Error: return outside a mehtod");
+			System.err.println("Error: return outside a mehtod");
 		}
 		if (this.return_type != this.rootType)
 		{
-			System.out.println("Error: expected other return type");
+			System.err.println("Error: expected other return type");
 		}
 		return null;
 	}
@@ -229,7 +239,7 @@ public Object visit(ICClass icClass)
 	{
 		if (this.in_loop == 0)
 		{
-			System.out.println("Error: break statement outside loop");
+			System.err.println("Error: break statement outside loop");
 		}
 		if (this.in_loop >0)
 		{
@@ -241,7 +251,7 @@ public Object visit(ICClass icClass)
 	{
 		if (this.in_loop == 0)
 		{
-			System.out.println("Error: continue statement outside loop");
+			System.err.println("Error: continue statement outside loop");
 		}
 		if (this.in_loop >0)
 		{
@@ -261,6 +271,7 @@ public Object visit(ICClass icClass)
 	}
 	public Object visit(LocalVarStmt localVariable)
 	{
+		add_variable(localVariable.getName(), localVariable.getType());
 		return null;
 	}
 	public Object visit(VarLocationExpr location)
@@ -327,7 +338,7 @@ public Object visit(ICClass icClass)
 	 {
 		 if (type(binop.getFirstOperand()) != type(binop.getSecondOperand()))
     		{
-			  System.out.println("Error: operation"+binop.getOperator()+"on different types");
+			  System.err.println("Error: operation"+binop.getOperator()+"on different types");
 	    	}
 		 return type(binop.getFirstOperand());
 	 }
