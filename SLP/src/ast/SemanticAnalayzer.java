@@ -223,7 +223,7 @@ public Object visit(ICClass icClass)
 		}
 		if (! this.return_type.getName().equals(type(returnStatement.getValue())))
 		{
-			System.err.println("Error: expected other return type" + " a = "+this.return_type.getName()+" b ="+type(returnStatement.getValue()));
+			System.err.println("Error: expected other return type");
 		}
 		return null;
 	}
@@ -281,6 +281,13 @@ public Object visit(ICClass icClass)
 	public Object visit(LocalVarStmt localVariable)
 	{
 		add_variable(localVariable.getName(), localVariable.getType());
+		String first_type = type(localVariable.getInitValue());
+		String second_type = localVariable.getType().getName();
+		//if (!type(localVariable.getInitValue()) .equals(localVariable.getType().getName()))
+		if (first_type!= null && !first_type.equals(second_type))
+		{
+			System.err.println("Error: assignment of incorrect type");
+		}
 		return null;
 	}
 	public Object visit(VarLocationExpr location)
@@ -289,6 +296,11 @@ public Object visit(ICClass icClass)
 	}
 	public Object visit(ArrayLocationExpr location)
 	{
+		System.out.println("RRRRRRRRRRRR");
+		if (!type(location.getIndex()).equals("int"))
+		{
+			System.err.println("Error: non-integer array subscript");
+		}
 		return null;
 	}
 	public Object visit(StaticCallExpr call)
@@ -301,6 +313,10 @@ public Object visit(ICClass icClass)
 	}
 	public Object visit(ThisExpr thisExpression)
 	{
+		if (this.in_virtual_method == false)
+		{
+			System.err.println("Error: this expression outside a virtual method");
+		}
 		return null;
 	}
 	public Object visit(NewClassExpr newClass)
@@ -353,7 +369,7 @@ public String type(Expr expr)
 			 LiteralExpr literalExpr = (LiteralExpr) expr;
 			 return MyToLowercase(literalExpr.getType().getDescription().split(" ")[0]);
 		 }
-		 System.out.println("The class is:"+expr.getClass().toString()+" for the expr: ");
+		 
 		 return null;
 	} 
 	
