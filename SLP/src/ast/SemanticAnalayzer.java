@@ -5,27 +5,22 @@ import ic.*;
 
 
 public class SemanticAnalayzer implements Visitor{
-	private ASTNode root;
 	//private PriorityQueue<HashMap<String, Type>> myVars = new PriorityQueue<HashMap<String, Type>> (); //map variable -> type
 	//private HashMap<String, PriorityQueue<Type>> myVars = new HashMap<String, PriorityQueue<Type>> ();
-	private HashMap<String, Stack<Type>> myVars = new HashMap<String, Stack<Type>> ();
-	private Type rootType = null;
-	private int in_loop = 0;//depth of loops - loop inside a loop inside a loop, etc.
+	private HashMap<String, Stack<String>> myVars = new HashMap<String, Stack<String>> ();
+	private boolean in_loop = false;
 	private boolean in_method = false;
 	private boolean in_virtual_method = false;
-	private boolean break_used = false;//indicates if we've already used break in the loop - this is important for implementing nested loops
-	private boolean continue_used = false;
-	private boolean return_used = false;
 	private Type return_type = null; //expected return value of a method, if in_methdo is set true
 	
 	
 //retrieve first non-null type from stack
-public Type getType(String variable)//it's static since this depends on the location in the code
+public String getType(String variable)//it's static since this depends on the location in the code
 {
-	for (Type type : this.myVars.get(variable))
+	for (String string : this.myVars.get(variable))
 	{
-		if (type != null)
-			return type;
+		if (string != null)
+			return string;
 	}
 	return null;
 }
@@ -44,22 +39,20 @@ public void addAll()
 {
 	for (String string : this.myVars.keySet())
 	{
-		add_variable(string, null);
+		add_variable(string, (String) null);
 		//this.myVars.get(string).add(null);
 	}
 }
 	
 	public SemanticAnalayzer(ASTNode root, SemanticAnalayzer sa)
 	{
-		this.root = root;
 		this.in_loop = sa.in_loop;
 		this.in_method = sa.in_method;
 		this.myVars = sa.myVars;
 		this.return_type = sa.return_type;
 	}
 	
-	public SemanticAnalayzer(ASTNode root) {
-		this.root = root;
+	public SemanticAnalayzer() {
 	}
 	
 	//each function returns a List of SemanticAnalyzer objects, represent the sons of the current in the tree
@@ -68,14 +61,15 @@ public void addAll()
 		//SemanticAnalayzer sa = (SemanticAnalayzer) program.accept(this);
 		
 		
-		List <SemanticAnalayzer> res = new ArrayList<SemanticAnalayzer>();
+		//List <SemanticAnalayzer> res = new ArrayList<SemanticAnalayzer>();
 		
 		for (ICClass icClass : program.getClasses())
 		{
 			//res.add(new SemanticAnalayzer(icClass, this));
 			icClass.accept(this);
 		}
-		return res;
+		//return res;
+		return null;
 			
 		//return (Object) (new SemanticAnalayzer(my_class, sa.myVars));
 	}
@@ -91,6 +85,29 @@ public void add_variable(Method method)
 	add_variable(method.getName(), method.getType());
 }
 
+public void add_variable(String name_of_var, String name_of_type)
+{
+	if (name_of_type.split(" ")[0]==null)
+	{
+		name_of_type = name_of_type+" 0";
+	}
+	Stack<String> new_stack = this.myVars.get(name_of_var);
+	if (new_stack == null)
+	{
+		new_stack = new Stack<String>();
+	}
+	else
+	{
+		String prevType = new_stack.pop();
+		if (prevType != null && name_of_type != null)
+		{
+			System.err.println("Error: variable "+name_of_var+" already exists in this block");
+		}
+	}
+	new_stack.add(name_of_type);
+	this.myVars.put(name_of_var, new_stack);
+}
+
 public void add_variable(String name, int line)
 {
 	add_variable(name, new UserType(line, name));
@@ -98,27 +115,9 @@ public void add_variable(String name, int line)
 
 public void add_variable(String name, Type type)
 {
-	
-	Stack<Type> new_stack = this.myVars.get(name);
-	if (new_stack == null)
-	{
-		new_stack = new Stack<Type>();
-	}
-	else
-	{
-		Type prevType = new_stack.pop();
-		if (prevType != null && type != null)
-		{
-			System.err.println("Error: variable "+name+" already exists in this block");
-		}
-	}
-	//else if (new_stack.pop()!=null && type != null) 
-	{
-		//System.out.println("Error: variable "+name+" already exists in this block");
-	}
-	new_stack.add(type);
-	this.myVars.put(name, new_stack);
+	add_variable(name, type.getName());
 }
+
 
 public Object visit(ICClass icClass)
 	{
@@ -203,9 +202,9 @@ public Object visit(ICClass icClass)
 	{
 		if (!type(assignment.getVariable()).equals(type(assignment.getAssignVal())))
 		{
-			System.out.println("first ="+type(assignment.getVariable())+" and second ="+type(assignment.getAssignVal()));
+			System.err.println(type(assignment.getVariable()));
+			System.err.println(type(assignment.getAssignVal()));
 			System.err.println("Error: Assignment of different types");
-			//System.exit(1);
 		}
 		
 		return null;
@@ -234,37 +233,24 @@ public Object visit(ICClass icClass)
 	public Object visit(WhileStmt whileStatement)
 	{
 		whileStatement.getCond().accept(this);
-		this.in_loop ++;
+		this.in_loop = true;
 		whileStatement.getStmt().accept(this);
-		this.in_loop --;
+		this.in_loop =false;
 		return null;
 	}
 	public Object visit(BreakStmt breakStatement)
 	{
-		if (this.in_loop == 0)
+		if (this.in_loop == false)
 		{
 			System.err.println("Error: break statement outside loop");
-		}
-		if (this.in_loop >0)
-		{
-			this.in_loop --;
 		}
 		return null;
 	}
 	public Object visit(ContinueStmt continueStatement)
 	{
-		if (this.continue_used)
-		{
-			System.err.println("Error: continue already used");
-			return null;
-		}
-		if (this.in_loop == 0)
+		if (this.in_loop == false)
 		{
 			System.err.println("Error: continue statement outside loop");
-		}
-		if (this.in_loop >0)
-		{
-			this.in_loop --;
 		}
 		return null;
 	}
@@ -280,12 +266,25 @@ public Object visit(ICClass icClass)
 	}
 	public Object visit(LocalVarStmt localVariable)
 	{
-		add_variable(localVariable.getName(), localVariable.getType());
 		String first_type = type(localVariable.getInitValue());
-		String second_type = localVariable.getType().getName();
+		String second_type;
+		
+		if (localVariable.getType() instanceof PrimitiveType)
+		{
+			PrimitiveType primitiveType = (PrimitiveType) localVariable.getType();
+			second_type = localVariable.getType().getName() + " "+ primitiveType.getDimension();
+		}
+		else
+		{
+			System.err.println(localVariable.getType().getName());
+			second_type = localVariable.getType().getName()+ " "+0;
+		}
+		add_variable(localVariable.getName(), second_type);
+		
 		//if (!type(localVariable.getInitValue()) .equals(localVariable.getType().getName()))
 		if (first_type!= null && !first_type.equals(second_type))
 		{
+			System.err.println("first ="+first_type+ " and second ="+second_type);
 			System.err.println("Error: assignment of incorrect type");
 		}
 		return null;
@@ -362,17 +361,46 @@ public String type(Expr expr)
 		 if (expr instanceof VarLocationExpr)
 		 {
 			 VarLocationExpr varLocationExpr = (VarLocationExpr) expr;
-			 return getType(varLocationExpr.getName()).getName();
+			 
+			 String res = getType(varLocationExpr.getName());
+			 return res;
 		 }
 		 else if (expr instanceof LiteralExpr)
 		 {
 			 LiteralExpr literalExpr = (LiteralExpr) expr;
 			 return MyToLowercase(literalExpr.getType().getDescription().split(" ")[0]);
 		 }
+		 else if (expr instanceof ArrayLocationExpr)
+		 {
+			 ArrayLocationExpr arrayLocationExpr = (ArrayLocationExpr) expr;
+			 String my_type = type(arrayLocationExpr.getArray());
+			 if (my_type != null)
+				 return my_type;
+			 String[] my_arr = my_type.split(" ");
+			 int dimension;
+		     dimension = Integer.parseInt(my_arr[1]);
+		     if (dimension ==0)
+		     {
+					System.err.println("Error: subscript of two low dimensions");
+			 }
+			 my_type = my_arr[0];
+			 return my_type + " " + (dimension-1);
+			 
+		 }
+		 else
+	     try
+		 {
+			 System.err.println(expr.getClass());
+		 }
+		 catch (Exception e)
+		 {
+			 
+		 }
 		 
 		 return null;
 	} 
 	
+
 public String MyToUppercase(String x)
 {
 	if (x.equals("int"))
