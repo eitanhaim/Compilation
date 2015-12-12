@@ -1,0 +1,47 @@
+class Dudi
+{
+
+int my_func(int x)
+{
+
+int[] z;
+int y = z;
+boolean w = z[2];
+//int y;
+
+
+
+
+return "2";
+break;
+//string r;
+//string w;
+w = "hi";
+int[] libi;
+int q = "ere";
+int me = libi["2"];
+
+//int z;
+z = 3;
+//z ="4";
+boolean r;
+r = true;
+
+	while (true)
+	{
+	int y;
+	//int y;
+	//int y;
+	y = "d";
+	break;
+	break;
+	}
+
+}
+
+static void main(string[] args)
+{
+	my_func(3);
+}
+
+}

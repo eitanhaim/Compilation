@@ -2,8 +2,11 @@ package ic;
 
 import java.io.*;
 
+import semantic_analysis.SemanticTablePrinter;
+import type_table.TypeTable;
 import java_cup.runtime.*;
 import ast.*;
+import ast.SemanticAnalayzer;
 import parser.*;
 import semantic_analysis.*;
 
@@ -77,11 +80,19 @@ public class Main {
 
             Tester scopeChecker = new ScopeChecker(root);
             scopeChecker.test();
+            if (!scopeChecker.isAllGood())
+            	System.err.println(scopeChecker.getErrors());
 
             Tester analyzer = new TypeAnalyzer(root);
             analyzer.test();
+            if (!analyzer.isAllGood())
+            	System.err.println(analyzer.getErrors());
             
-			//SemanticAnalayzer sa = new SemanticAnalayzer(root);
+            //SemanticTablePrinter semanticPrinter = new SemanticTablePrinter(args[0]);
+            //System.out.print(semanticPrinter.print(root));
+            //System.out.print(TypeTable.print(args[0]) + "\n");
+            
+			//SemanticAnalayzer sa = new SemanticAnalayzer();
 			//root.accept(sa);
 		} catch (FileNotFoundException fnfException) {
             System.err.println("The file " + args[0] + " not found");

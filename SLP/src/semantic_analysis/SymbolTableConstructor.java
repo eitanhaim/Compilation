@@ -28,9 +28,9 @@ public class SymbolTableConstructor implements PropagatingVisitor<SymbolTable, O
 		errors = new StringBuffer();
 	}
 
-	public ASTNode construct() {
+	public ASTNode construct() throws Exception {
 		ASTNode resultNode = null;
-		try {
+		//try {
 			resultNode = (ASTNode) root.accept(this, null);
 
             if (!didIFoundMainMethod) {
@@ -41,9 +41,9 @@ public class SymbolTableConstructor implements PropagatingVisitor<SymbolTable, O
                 System.err.println(errors.toString());
             }
 
-		} catch (Exception ex) {
-            System.err.println(ex.getMessage());
-        }
+		//} catch (Exception ex) {
+        //    System.err.println(ex.getMessage());
+        //}
 
 		return resultNode;
 	}
