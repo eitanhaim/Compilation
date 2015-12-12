@@ -14,7 +14,7 @@ public interface Visitor {
 	public Object visit(Formal formal);
 	public Object visit(PrimitiveType type);
 	public Object visit(UserType type);
-	public Object visit(AssigmStmt assignment);
+	public Object visit(AssignStmt assignment);
 	public Object visit(CallStmt callStatement);
 	public Object visit(ReturnStmt returnStatement);
 	public Object visit(IfStmt ifStatement);

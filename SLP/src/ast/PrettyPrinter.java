@@ -165,7 +165,7 @@ public class PrettyPrinter implements Visitor {
 		return output.toString();
 	}
 
-	public Object visit(AssigmStmt assignment) {
+	public Object visit(AssignStmt assignment) {
 		StringBuffer output = new StringBuffer();
 
 		indent(output, assignment);

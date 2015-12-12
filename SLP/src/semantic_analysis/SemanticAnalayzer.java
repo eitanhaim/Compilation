@@ -1,7 +1,7 @@
-package ast;
+package semantic_analysis;
 
 import java.util.*;
-import ic.*;
+import ast.*;
 
 
 public class SemanticAnalayzer implements Visitor{
@@ -17,38 +17,38 @@ public class SemanticAnalayzer implements Visitor{
 	private boolean continue_used = false;
 	private boolean return_used = false;
 	private Type return_type = null; //expected return value of a method, if in_methdo is set true
-	
-	
-//retrieve first non-null type from stack
-public Type getType(String variable)//it's static since this depends on the location in the code
-{
-	for (Type type : this.myVars.get(variable))
-	{
-		if (type != null)
-			return type;
-	}
-	return null;
-}
-
-//pop from each stack
-public void popAll()
-{
-	for (String string: this.myVars.keySet())
-	{
-		this.myVars.get(string).pop();
-	}
-}
 
 
-public void addAll()
-{
-	for (String string : this.myVars.keySet())
+	//retrieve first non-null type from stack
+	public Type getType(String variable)//it's static since this depends on the location in the code
 	{
-		add_variable(string, null);
-		//this.myVars.get(string).add(null);
+		for (Type type : this.myVars.get(variable))
+		{
+			if (type != null)
+				return type;
+		}
+		return null;
 	}
-}
-	
+
+	//pop from each stack
+	public void popAll()
+	{
+		for (String string: this.myVars.keySet())
+		{
+			this.myVars.get(string).pop();
+		}
+	}
+
+
+	public void addAll()
+	{
+		for (String string : this.myVars.keySet())
+		{
+			add_variable(string, null);
+			//this.myVars.get(string).add(null);
+		}
+	}
+
 	public SemanticAnalayzer(ASTNode root, SemanticAnalayzer sa)
 	{
 		this.root = root;
@@ -57,73 +57,73 @@ public void addAll()
 		this.myVars = sa.myVars;
 		this.return_type = sa.return_type;
 	}
-	
+
 	public SemanticAnalayzer(ASTNode root) {
 		this.root = root;
 	}
-	
+
 	//each function returns a List of SemanticAnalyzer objects, represent the sons of the current in the tree
 	public Object visit(Program program)
 	{
 		//SemanticAnalayzer sa = (SemanticAnalayzer) program.accept(this);
-		
-		
+
+
 		List <SemanticAnalayzer> res = new ArrayList<SemanticAnalayzer>();
-		
+
 		for (ICClass icClass : program.getClasses())
 		{
 			//res.add(new SemanticAnalayzer(icClass, this));
 			icClass.accept(this);
 		}
 		return res;
-			
+
 		//return (Object) (new SemanticAnalayzer(my_class, sa.myVars));
 	}
 
-public void add_variable(Field field)
-{
-	add_variable(field.getName(), field.getType());
-}
-
-
-public void add_variable(Method method)
-{
-	add_variable(method.getName(), method.getType());
-}
-
-public void add_variable(String name, int line)
-{
-	add_variable(name, new UserType(line, name));
-}
-
-public void add_variable(String name, Type type)
-{
-	
-	Stack<Type> new_stack = this.myVars.get(name);
-	if (new_stack == null)
+	public void add_variable(Field field)
 	{
-		new_stack = new Stack<Type>();
+		add_variable(field.getName(), field.getType());
 	}
-	else
+
+
+	public void add_variable(Method method)
 	{
-		Type prevType = new_stack.pop();
-		if (prevType != null && type != null)
+		add_variable(method.getName(), method.getType());
+	}
+
+	public void add_variable(String name, int line)
+	{
+		add_variable(name, new UserType(line, name));
+	}
+
+	public void add_variable(String name, Type type)
+	{
+
+		Stack<Type> new_stack = this.myVars.get(name);
+		if (new_stack == null)
 		{
-			System.err.println("Error: variable "+name+" already exists in this block");
+			new_stack = new Stack<Type>();
 		}
+		else
+		{
+			Type prevType = new_stack.pop();
+			if (prevType != null && type != null)
+			{
+				System.err.println("Error: variable "+name+" already exists in this block");
+			}
+		}
+		//else if (new_stack.pop()!=null && type != null) 
+		{
+			//System.out.println("Error: variable "+name+" already exists in this block");
+		}
+		new_stack.add(type);
+		this.myVars.put(name, new_stack);
 	}
-	//else if (new_stack.pop()!=null && type != null) 
-	{
-		//System.out.println("Error: variable "+name+" already exists in this block");
-	}
-	new_stack.add(type);
-	this.myVars.put(name, new_stack);
-}
 
-public Object visit(ICClass icClass)
+	public Object visit(ICClass icClass)
 	{
 		//List <SemanticAnalayzer> res = new ArrayList<SemanticAnalayzer>();
-		
+
 		for (Field field : icClass.getFields())
 		{
 			add_variable(field);
@@ -143,7 +143,7 @@ public Object visit(ICClass icClass)
 		add_variable(field);
 		return null;
 	}
-	
+
 	public Object visit(VirtualMethod method)
 	{
 		this.return_type = method.getType();
@@ -163,7 +163,7 @@ public Object visit(ICClass icClass)
 		this.return_type = null;
 		return null;
 	}
-	
+
 	public Object visit(StaticMethod method)
 	{
 		this.return_type = method.getType();
@@ -199,7 +199,7 @@ public Object visit(ICClass icClass)
 	{
 		return null;
 	}
-	public Object visit(AssigmStmt assignment)
+	public Object visit(AssignStmt assignment)
 	{
 		if (!type(assignment.getVariable()).equals(type(assignment.getAssignVal())))
 		{
@@ -207,7 +207,7 @@ public Object visit(ICClass icClass)
 			System.err.println("Error: Assignment of different types");
 			//System.exit(1);
 		}
-		
+
 		return null;
 	}
 	public Object visit(CallStmt callStatement)
@@ -355,46 +355,46 @@ public Object visit(ICClass icClass)
 	{
 		return null;
 	}
-	
 
-public String type(Expr expr)
-	 {
-		 if (expr instanceof VarLocationExpr)
-		 {
-			 VarLocationExpr varLocationExpr = (VarLocationExpr) expr;
-			 return getType(varLocationExpr.getName()).getName();
-		 }
-		 else if (expr instanceof LiteralExpr)
-		 {
-			 LiteralExpr literalExpr = (LiteralExpr) expr;
-			 return MyToLowercase(literalExpr.getType().getDescription().split(" ")[0]);
-		 }
-		 
-		 return null;
+
+	public String type(Expr expr)
+	{
+		if (expr instanceof VarLocationExpr)
+		{
+			VarLocationExpr varLocationExpr = (VarLocationExpr) expr;
+			return getType(varLocationExpr.getName()).getName();
+		}
+		else if (expr instanceof LiteralExpr)
+		{
+			LiteralExpr literalExpr = (LiteralExpr) expr;
+			return MyToLowercase(literalExpr.getType().getDescription().split(" ")[0]);
+		}
+
+		return null;
 	} 
-	
-public String MyToUppercase(String x)
-{
-	if (x.equals("int"))
-		return "Integer";
-	else if (x.equals("boolean"))
-		return "Boolean";
-	else if (x.equals("string"))
-		return "String";
-	else
-		return x;
-}
 
-public String MyToLowercase(String x)
-{
-	if (x.equals("Integer"))
-		return "int";
-	else if(x.equals("Boolean"))
-		return "boolean";
-	else if (x.equals("String"))
-		return "string";
-	else
-		return x;
-}
-	
+	public String MyToUppercase(String x)
+	{
+		if (x.equals("int"))
+			return "Integer";
+		else if (x.equals("boolean"))
+			return "Boolean";
+		else if (x.equals("string"))
+			return "String";
+		else
+			return x;
+	}
+
+	public String MyToLowercase(String x)
+	{
+		if (x.equals("Integer"))
+			return "int";
+		else if(x.equals("Boolean"))
+			return "boolean";
+		else if (x.equals("String"))
+			return "string";
+		else
+			return x;
+	}
+
 }

@@ -3,7 +3,7 @@ package ast;
 /**
  * An AST node for an assignment statement.
  */
-public class AssigmStmt extends Stmt {
+public class AssignStmt extends Stmt {
 	private LocationExpr variable;;
 	private Expr assignVal;
 
@@ -13,7 +13,7 @@ public class AssigmStmt extends Stmt {
 	 * @param variable   Variable to assign a value to.
 	 * @param assignVal  Value to assign.
 	 */
-	public AssigmStmt(LocationExpr variable, Expr assignVal) {
+	public AssignStmt(LocationExpr variable, Expr assignVal) {
 		super(variable.getLine());
 		this.variable = variable;
 		this.assignVal = assignVal;
@@ -30,5 +30,11 @@ public class AssigmStmt extends Stmt {
 	@Override
 	public Object accept(Visitor visitor) {
 		return visitor.visit(this);
+	}
+	
+	@Override
+	public <DownType, UpType> UpType accept(
+			PropagatingVisitor<DownType, UpType> visitor, DownType context) throws Exception {
+		return visitor.visit(this, context);
 	}
 }

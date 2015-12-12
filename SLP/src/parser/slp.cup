@@ -182,7 +182,7 @@ stmt_list ::= // empty
 	| stmt_list:sl error
 ;
 stmt ::= location:l ASSIGN expr:e SEMI
-	{: RESULT = new AssigmStmt(l, e); :}
+	{: RESULT = new AssignStmt(l, e); :}
 	| call:c SEMI
 	{: RESULT = new CallStmt(c); :}
 	| return_stmt:rs
