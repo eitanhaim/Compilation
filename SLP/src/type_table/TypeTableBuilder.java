@@ -156,7 +156,7 @@ public class TypeTableBuilder implements Visitor {
 	}
 	
 	/**
-	 * Visit any kind of method.
+	 * Visits any kind of method.
 	 * 
 	 * @param method  Method to visit.
 	 * @return 		  null
@@ -192,7 +192,7 @@ public class TypeTableBuilder implements Visitor {
 	}
 	
 	/**
-	 * Visit any kind of ast.Type
+	 * Visits any kind of ast.Type
 	 * 
 	 * @param type  Type to visit
 	 * @return 		null

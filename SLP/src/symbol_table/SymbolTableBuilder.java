@@ -58,12 +58,12 @@ public class SymbolTableBuilder implements Visitor {
 	 * Builds the program symbol table while checking the following semantic issues:
 	 * - There are no calls to variables or methods which were not initialized in their scope.
 	 * 	  # Note that calls to local variables will only be permitted if the variable was initialized before the call.
-	 *	  # There is a separation between a class virtual scope and static scope in this check but a class has only one symbol table.
-	 * - Checks there are no calls to classes which were not declared in the program
-	 * - Checks variables weren't initialized in their scope more than once.
-	 * - Checks fields weren't initialized in their scope or in one of their super classes more than once.
-	 * - Checks methods were not declared more than once in their scope or in one of their
-	 *	  super classes unless a method overrides a method with the same signature.
+	 *	  # Note that there is a separation between a class virtual scope and static scope in this check but a class has only one symbol table.
+	 * - There are no calls to classes which were not declared in the program
+	 * - Variables weren't initialized in their scope more than once.
+	 * - Fields weren't initialized in their scope or in one of their super classes more than once.
+	 * - Methods were not declared more than once in their scope or in one of their
+	 *	 super classes unless a method overrides a method with the same signature.
 	 * - Set types to each of the class, fields, formals and local variables nodes.
 	 * - Connects each node with its local symbol table.
 	 * The AST is scanned in BFS down to the methods level and in DFS from there on.
@@ -490,9 +490,10 @@ public class SymbolTableBuilder implements Visitor {
 	}
 	
 	/**
-	 * a visit function for a general method
-	 * @param method method to visit
-	 * @return true iff the visit passed semantic checks
+	 * Visits any kind of method.
+	 * 
+	 * @param method  Method to visit.
+	 * @return 		  True if the visit passed semantic checks, otherwise returns false.
 	 */
 	private Object visitMethod(Method method) {
 		SymbolTable currentMethodSymbolTable = method.getSymbolTable().findChildSymbolTable(
@@ -514,9 +515,12 @@ public class SymbolTableBuilder implements Visitor {
 	}
 	
 	/**
+	 * Adds a new symbol entry to the symbol table while checking if there is no variable duplication. 
 	 * 
-	 * @return true if and only if there is no variable duplication 
-	 * and the SymbolEntry was added successfully.
+	 * @param table  Symbol table.
+	 * @param entry  Symbol entry to add to table.
+	 * @return	     True if there is no variable duplication and entry was added successfully,
+	 * 				 otherwise returns false.
 	 */
 	private Boolean addEntryAndCheckDuplication(SymbolTable table, SymbolEntry entry) {
 		if (table.hasEntry(entry.getId()))
@@ -546,8 +550,10 @@ public class SymbolTableBuilder implements Visitor {
 	}
 	
 	/**
-	 * @param method method to evaluate
-	 * @return the symbol kind of this method
+	 * Gets the symbol kind of the specified Method node.
+	 * 
+	 * @param method  A Method node.
+	 * @return		  the symbol kind of the specified Method node.
 	 */
 	private SymbolKind getMethodKind(Method method) {
 		if (method instanceof VirtualMethod)
@@ -557,23 +563,24 @@ public class SymbolTableBuilder implements Visitor {
 	}
 	
 	/**
-	 * Looks for a symbol entry for a local variable. 
+	 * Searches for a symbol entry of a local variable. 
 	 * The entry can be of kind Local Variable, Method Parameter or a Field.
-	 * @param name
-	 * @param bottomSymbolTable
-	 * @return
+	 * 
+	 * @param name				 Name of symbol entry to look for.
+	 * @param bottomSymbolTable  The bottom symbol table.
+	 * @return					 The symbol entry of a local variable. 
 	 */
 	private SymbolEntry getVariableSymbolEntry(String name, SymbolTable bottomSymbolTable) {
 		if ((bottomSymbolTable.getTableType() == SymbolTableType.METHOD) || 
 				(bottomSymbolTable.getTableType() == SymbolTableType.STATEMENT_BLOCK)) {
-			// Climbing the symbol table tree up to the symbol table of the method from which contains the variable.
+			// climb the symbol table tree up to the symbol table of the method from which contains the variable.
 			while (bottomSymbolTable.getTableType().equals(SymbolTableType.STATEMENT_BLOCK)) {
 				if (bottomSymbolTable.hasEntry(name))
 					return bottomSymbolTable.getEntry(name);
 				bottomSymbolTable = bottomSymbolTable.getParentSymbolTable();
 			}
 			
-			// Checking method table:
+			// check method table:
 			if (bottomSymbolTable.hasEntry(name))
 				return bottomSymbolTable.getEntry(name);
 			
@@ -588,7 +595,7 @@ public class SymbolTableBuilder implements Visitor {
 				return null;
 		}
 		
-		// Checking class tables for a suitable field:
+		// check class tables for a suitable field:
 		while (bottomSymbolTable.getTableType() != SymbolTableType.GLOBAL) {
 			SymbolTable clsTable = bottomSymbolTable;
 			if (clsTable.hasEntry(name))
@@ -601,11 +608,12 @@ public class SymbolTableBuilder implements Visitor {
 	}
 	
 	/**
-	 * Looks for a method symbol entry from a static call or from a virtual call with external scope.
-	 * @param name
-	 * @param methodKind
-	 * @param bottomClassSymbolTable: The methods assume it has a CLASS symbol table type.
-	 * @return
+	 * Searches for a method symbol entry from a static call or from a virtual call with external scope.
+	 * 
+	 * @param name		  			  Name of symbol entry to look for.
+	 * @param methodKind  			  The method kind.
+	 * @param bottomClassSymbolTable  The methods assume it has a CLASS symbol table type.
+	 * @return						  The method symbol.
 	 */
 	private SymbolEntry getMethodSymbolEntryFromExternalCall(
 			String name, SymbolKind methodKind, SymbolTable bottomClassSymbolTable) {
@@ -619,21 +627,21 @@ public class SymbolTableBuilder implements Visitor {
 	}
 	
 	/**
-	 * Looks for a method symbol entry from a virtual call without external scope.
-	 * If the call was executed from a virtual method then a method entry with the same name and with any method kind (virtual or static) is a legal entry.
-	 * If the call was executed from a static method then only a method entry of kind static method with the same name is a legal entry.
-	 * @param name
-	 * @param bottomSymbolTable: The methods assume it has a METHOD or a STATEMENT_BLCOK symbol table type.
-	 * @return
+	 * Searches for a method symbol entry from a virtual call without external scope.
+	 * - If the call was executed from a virtual method then a method entry with the same name and with any method kind (virtual or static) is a legal entry.
+	 * - If the call was executed from a static method then only a method entry of kind static method with the same name is a legal entry.
+	 * 
+	 * @param name				 Name of symbol entry to look for.
+	 * @param bottomSymbolTable  The methods assume it has a METHOD or a STATEMENT_BLCOK symbol table type.
+	 * @return					 The method symbol.
 	 */
 	private SymbolEntry getMethodSymbolEntryFromInternalCall(
 			String name, SymbolTable bottomSymbolTable) {
-		
-		// Climbing the symbol table tree up to the symbol table of the method from which the call was executed.
+		// climb the symbol table tree up to the symbol table of the method from which the call was executed.
 		while (bottomSymbolTable.getTableType().equals(SymbolTableType.STATEMENT_BLOCK)) 
 			bottomSymbolTable = bottomSymbolTable.getParentSymbolTable();
 		
-		// Identifying kind of the method from which the call was executed (static or virtual).
+		// identify kind of the method from which the call was executed (static or virtual).
 		SymbolKind scopeMethodKind = bottomSymbolTable.getParentSymbolTable().
 				getEntry(bottomSymbolTable.getId()).getKind();
 		SymbolTable bottomClassSymbolTable = bottomSymbolTable = bottomSymbolTable.getParentSymbolTable();
@@ -646,7 +654,7 @@ public class SymbolTableBuilder implements Visitor {
 						if (bottomClassSymbolTable.getEntry(name).getKind() == SymbolKind.STATIC_METHOD)
 							return bottomClassSymbolTable.getEntry(name);
 						else
-							return null; // calling to a virtual method in a virtual call without external scope from a static call is illegal.
+							return null; // call to a virtual method in a virtual call without external scope from a static call is illegal.
 					}
 				}
 					
