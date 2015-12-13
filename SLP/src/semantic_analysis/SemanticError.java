@@ -1,10 +1,13 @@
 package semantic_analysis;
 
-public class SemanticError extends Exception {
-	
+import java.io.IOException;
+
+public class SemanticError extends IOException {
+
 	private static final long serialVersionUID = 1L;
 	
-	public SemanticError(String message) {
-		super(message);
+	public SemanticError(int line, String msg) {
+		super("semantic error at line " + line + ": " + msg);
 	}
 }
+

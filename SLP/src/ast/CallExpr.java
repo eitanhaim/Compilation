@@ -8,6 +8,7 @@ import java.util.List;
 public abstract class CallExpr extends Expr {
 	private String name;
 	private List<Expr> arguments;
+	private type_table.Type methodType;
 
 	/**
 	 * Constructs a new method call node. Used by subclasses.
@@ -28,5 +29,13 @@ public abstract class CallExpr extends Expr {
 
 	public List<Expr> getArguments() {
 		return arguments;
+	}
+	
+	public type_table.Type getMethodType() {
+		return methodType;
+	}
+
+	public void setMethodType(type_table.Type methodType) {
+		this.methodType = methodType;
 	}
 }

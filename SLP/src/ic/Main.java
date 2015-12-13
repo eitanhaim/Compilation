@@ -1,14 +1,14 @@
 package ic;
 
 import java.io.*;
-
-import semantic_analysis.SemanticTablePrinter;
-import type_table.TypeTable;
 import java_cup.runtime.*;
+
 import ast.*;
-import ast.SemanticAnalayzer;
 import parser.*;
-import semantic_analysis.*;
+import semantic_analysis.SemanticError;
+import symbol_table.SymbolsTableBuilder;
+import type_table.TypeTableBuilder;
+import type_table.TypeValidator;
 
 /** 
  * The entry point of the IC application.
@@ -50,13 +50,13 @@ public class Main {
 				}	
 			}
 			
+			// TODO: add code regarding Library
 			
+			// scan the IC program
 			txtFile = new FileReader(args[0]);
-			
-			 // create a scanning object
 			Lexer scanner = new Lexer(txtFile);
 			
-			// create a parsing object
+			// parse the IC program
 			Parser parser = new Parser(scanner); 
 			parser.printTokens = printtokens;
 			parseSymbol = parser.parse();
@@ -64,36 +64,22 @@ public class Main {
 
 			Program root = (Program) parseSymbol.value;	
 			
-			// pretty-print the program to System.out, if requested
-			if (printast && (root != null))
-			{ 
-				PrettyPrinter printer = new PrettyPrinter(args[0], root);
-				printer.print();
-			}
-			
-			// execute semantic analysis
-            TypeTableConstructor typeTableConstructor = new TypeTableConstructor(root);
-            typeTableConstructor.run();
+			// analyze the IC program semantically 
+			TypeTableBuilder typeTableBuilder = new TypeTableBuilder(new File(args[0]));
+			typeTableBuilder.buildTypeTable(root);
+			SymbolsTableBuilder s = new SymbolsTableBuilder(typeTableBuilder.getBuiltTypeTable(), args[0]);
+			s.buildSymbolTables(root);
 
-            SymbolTableConstructor symbolTableConstructor = new SymbolTableConstructor(args[0], root);
-            symbolTableConstructor.construct();
-
-            Tester scopeChecker = new ScopeChecker(root);
-            scopeChecker.test();
-            if (!scopeChecker.isAllGood())
-            	System.err.println(scopeChecker.getErrors());
-
-            Tester analyzer = new TypeAnalyzer(root);
-            analyzer.test();
-            if (!analyzer.isAllGood())
-            	System.err.println(analyzer.getErrors());
+			TypeValidator tv = new TypeValidator(typeTableBuilder.getBuiltTypeTable());
+			tv.validate(root);
             
-            //SemanticTablePrinter semanticPrinter = new SemanticTablePrinter(args[0]);
-            //System.out.print(semanticPrinter.print(root));
-            //System.out.print(TypeTable.print(args[0]) + "\n");
+            // pretty-print the program to System.out, if requested
+            if (printast && (root != null))
+            { 
+            	PrettyPrinter printer = new PrettyPrinter(args[0], root);
+            	printer.print();
+            }
             
-			//SemanticAnalayzer sa = new SemanticAnalayzer();
-			//root.accept(sa);
 		} catch (FileNotFoundException fnfException) {
             System.err.println("The file " + args[0] + " not found");
         } catch (LexicalError lexicalError) {

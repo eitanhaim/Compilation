@@ -46,10 +46,4 @@ public class VarLocationExpr extends LocationExpr {
 	public Object accept(Visitor visitor) {
 		return visitor.visit(this);
 	}
-	
-	@Override
-	public <DownType, UpType> UpType accept(
-			PropagatingVisitor<DownType, UpType> visitor, DownType context) throws Exception {
-		return visitor.visit(this, context);
-	}
 }

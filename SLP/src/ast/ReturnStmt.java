@@ -5,7 +5,8 @@ package ast;
  */
 public class ReturnStmt extends Stmt {
 	private Expr value = null;
-
+	private type_table.Type methodType;
+	
 	/**
 	 * Constructs a new return statement node, with no return value.
 	 * 
@@ -33,15 +34,17 @@ public class ReturnStmt extends Stmt {
 	public Expr getValue() {
 		return value;
 	}
+	
+	public type_table.Type getMethodType() {
+		return methodType;
+	}
+
+	public void setMethodType(type_table.Type methodType) {
+		this.methodType = methodType;
+	}
 
 	@Override
 	public Object accept(Visitor visitor) {
 		return visitor.visit(this);
-	}
-	
-	@Override
-	public <DownType, UpType> UpType accept(
-			PropagatingVisitor<DownType, UpType> visitor, DownType context) throws Exception {
-		return visitor.visit(this, context);
 	}
 }

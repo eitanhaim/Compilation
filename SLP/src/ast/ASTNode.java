@@ -1,13 +1,14 @@
 package ast;
 
-import semantic_analysis.SymbolTable;
+import symbol_table.SymbolTable;
 
 /**
  * Abstract base class for AST node base.
  */
 public abstract class ASTNode {
 	private int line;
-	private SymbolTable enclosingScope;
+	private SymbolTable symbolTable;
+	private type_table.Type entryType;
 	
 	/**
 	 * Constructs an AST node corresponding to a line number in the original code. Used by subclasses.
@@ -15,6 +16,7 @@ public abstract class ASTNode {
 	 * @param line	The line number.
 	 */
 	protected ASTNode(int line) {
+		this.symbolTable = null;
 		this.line = line;
 	}
 	
@@ -22,12 +24,20 @@ public abstract class ASTNode {
 		return line;
 	}
 	
-	public void setEnclosingScope(SymbolTable table) {
-		this.enclosingScope = table;
+	public void setSymbolTable(SymbolTable table) {
+		this.symbolTable = table;
 	}
 
-	public SymbolTable enclosingScope() {
-		return this.enclosingScope;
+	public SymbolTable getSymbolTable() {
+		return this.symbolTable;
+	}
+	
+	public type_table.Type getEntryType() {
+		return entryType;
+	}
+
+	public void setEntryType(type_table.Type entryType) {
+		this.entryType = entryType;
 	}
 	
 	/**
@@ -37,15 +47,4 @@ public abstract class ASTNode {
 	 * @return 		   A value propagated by the visitor.
 	 */
 	public abstract Object accept(Visitor visitor);
-
-	/** Accepts a propagating visitor parameterized by two types.
-	 * 
-	 * @param <DownType> The type of the object holding the context.
-	 * @param <UpType> The type of the result object.
-	 * @param visitor A propagating visitor.
-	 * @param context An object holding context information.
-	 * @return The result of visiting this node.
-	 */
-	public abstract <DownType, UpType> UpType accept(
-			PropagatingVisitor<DownType, UpType> visitor, DownType context) throws Exception;
 }
