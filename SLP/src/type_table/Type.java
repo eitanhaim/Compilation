@@ -7,19 +7,27 @@ public abstract class Type {
 	protected String name;
 	
 	/**
-	 * main constructor
-	 * @param name the type's name
+	 * Constructs a new symbol type.
+	 * 
+	 * @param name  Type name.
 	 */
 	public Type(String name) 
 	{
-		this.name=name;
+		this.name = name;
+	}
+	
+	public String getName()
+	{
+		return this.name;
 	}
 	
 	/**
-	 * @param t
-	 * @return true iff this is a subtype of type t
+	 * Checks if this type is a subtype of type t.
+	 * 
+	 * @param t  A type.
+	 * @return	 True if this type is a subtype of type t, otherwise returns false.
 	 */
-	public boolean subTypeOf(Type t)
+	public boolean subtypeOf(Type t)
 	{
 		if (this.equals(t))
 			return true;
@@ -28,70 +36,78 @@ public abstract class Type {
 		if (this.isClassType()) {
 			ClassType classType = (ClassType)this;
 			if (classType.hasSuperClass())
-				return classType.getSuperClassType().subTypeOf(t);
+				return classType.getSuperClassType().subtypeOf(t);
 		}
 		return false;
 	}
-	
+
 	/**
+	 * Checks if this type is an instance of ClassType.
 	 * 
-	 * @return true iff this type is an instance of ClassType
+	 * @return  True if this type is an instance of ClassType, otherwise returns false.
 	 */
 	public boolean isClassType() {
 		return (this instanceof ClassType);
 	}
 	
 	/**
+	 * Checks if this type is an instance of ArrayType.
 	 * 
-	 * @return true iff this type is an instance of ArrayType
+	 * @return  True if this type is an instance of ArrayType, otherwise returns false.
 	 */
 	public boolean isArrayType() {
 		return (this instanceof ArrayType);
 	}
 	
 	/**
+	 * Checks if this type is an instance of IntType.
 	 * 
-	 * @return true iff this type is an instance of IntType
+	 * @return  True if this type is an instance of IntType, otherwise returns false.
 	 */
 	public boolean isIntType() {
 		return (this instanceof IntType);
 	}
 	
 	/**
+	 * Checks if this type is an instance of StringType.
 	 * 
-	 * @return true iff this type is an instance of StringType
+	 * @return  True if this type is an instance of StringType, otherwise returns false.
 	 */
 	public boolean isStringType() {
 		return (this instanceof StringType);
 	}
 	
 	/**
+	 * Checks if this type is an instance of BoolType.
 	 * 
-	 * @return true iff this type is an instance of BoolType
+	 * @return  True if this type is an instance of BoolType, otherwise returns false.
 	 */
 	public boolean isBoolType() {
 		return (this instanceof BoolType);
 	}
 	
 	/**
+	 * Checks if this type is an instance of VoidType.
 	 * 
-	 * @return true iff this type is an instance of VoidType
+	 * @return  True if this type is an instance of VoidType, otherwise returns false.
 	 */
 	public boolean isVoidType() {
 		return (this instanceof VoidType);
 	}
 	
 	/**
+	 * Checks if this type is an instance of NullType.
 	 * 
-	 * @return true iff this type is an instance of NullType
+	 * @return  True if this type is an instance of NullType, otherwise returns false.
 	 */
 	public boolean isNullType() {
 		return (this instanceof NullType);
 	}
 	
 	/**
+	 * Checks if we can assign a null to this type.
 	 * 
-	 * @return true iff we can assign a null to this type
+	 * @return  True if this type is a null assignable, otherwise returns false.
 	 */
 	public boolean isNullAssignable() {
 		if ((this.isClassType()) || (this.isArrayType()) || (this.isStringType()))
@@ -102,16 +118,11 @@ public abstract class Type {
 		}
 		return false;
 	}
-	
-	/**
-	 * 
-	 * @return name of this type
-	 */
-	public String getName()
-	{
-		return this.name;
-	}
 }
+
+/**
+ * Data structure representing an integer symbol type
+ */
 class IntType extends Type 
 {
 	public IntType()
@@ -125,6 +136,9 @@ class IntType extends Type
 	}
 }
 
+/**
+ * Data structure representing a boolean symbol type
+ */
 class BoolType extends Type 
 {
 	public BoolType()
@@ -138,19 +152,10 @@ class BoolType extends Type
 	}
 }
 
-class NullType extends Type 
-{
-	public NullType()
-	{
-		super("NullType");
-	}
-	
-	@Override
-	public String toString() {
-		return "null";
-	}
-}
 
+/**
+ * Data structure representing a string symbol type
+ */
 class StringType extends Type 
 {
 	public StringType()
@@ -164,6 +169,25 @@ class StringType extends Type
 	}
 }
 
+/**
+ * Data structure representing a null type
+ */
+class NullType extends Type 
+{
+	public NullType()
+	{
+		super("NullType");
+	}
+	
+	@Override
+	public String toString() {
+		return "null";
+	}
+}
+
+/**
+ * Data structure representing a void symbol type
+ */
 class VoidType extends Type 
 {
 	public VoidType()
@@ -177,29 +201,34 @@ class VoidType extends Type
 	}
 }
 
+/**
+ * Data structure representing an array symbol type
+ */
 class ArrayType extends Type 
 {
 	private Type elemType;
 	public ArrayType(Type elemType)
 	{
 		super("ArrayType");
-		this.elemType=elemType;
+		this.elemType = elemType;
+	}
+	
+	public Type getElemType() {
+		return elemType;
 	}
 	
 	@Override
 	public String toString() {
 		return elemType.toString() + "[]";
 	}
-	
-	public Type getElemType() {
-		return elemType;
-	}
 }
 
+/**
+ * Data structure representing a method symbol type
+ */
 class MethodType extends Type 
 {  
 	private Type[] paramTypes;
-
 	private Type returnType;
 
 	public MethodType(Type[] paramTypes,Type returnType)
@@ -230,15 +259,18 @@ class MethodType extends Type
 	}
 }
 
+/**
+ * Data structure representing a class symbol type
+ */
 class ClassType extends Type 
 {   
+	String className;
 	ClassType superClassType;
-	String clsName;
 
 	public ClassType(String clsName, ClassType superClassType)
 	{
 		super("ClassType");
-		this.clsName = clsName;
+		this.className = clsName;
 		this.superClassType = superClassType;
 	}
 	
@@ -251,11 +283,11 @@ class ClassType extends Type
 	}
 	
 	public String getClassName() {
-		return this.clsName;
+		return this.className;
 	}
 	
 	@Override
 	public String toString() {
-		return clsName;
+		return className;
 	}
 }

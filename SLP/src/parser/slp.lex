@@ -146,14 +146,14 @@ STRING_CHAR=[^\n\r\"\\]+
 	\\\\				{ string.append('\\'); }
 	
 	/* error cases */
-	{LINE_TERMINATOR}  	{ throw new LexicalError("Unterminated string at end of line", yyline); }
+	{LINE_TERMINATOR}  	{ throw new LexicalError("Unterminated string", yyline); }
 	{STRING_CHAR}		{
 							char[] quote = yytext().toCharArray();
 							for (char c : quote) {
 								if ((c >= 32) && (c <= 126)) {
 									string.append(c);
 							  	} else {
-									throw new LexicalError("illegal character '" + c + "'", yyline, yycolumn);
+									throw new LexicalError("Illegal character '" + c + "'", yyline, yycolumn);
 							  	}
 						  	}
 						}

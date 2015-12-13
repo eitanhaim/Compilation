@@ -1,3 +1,13 @@
+//src/parser/Library.cup/cup-compact-red=false
+//src/parser/Library.cup/cup-debug=false
+//src/parser/Library.cup/cup-expected-conflicts=0
+//src/parser/Library.cup/cup-no-positions=false
+//src/parser/Library.cup/cup-no-scanner=false
+//src/parser/Library.cup/cup-non-terms=false
+//src/parser/Library.cup/cup-output=src
+//src/parser/Library.cup/cup-parser-class=LibParser
+//src/parser/Library.cup/cup-symbols-class=Libsym
+//src/parser/Library.cup/cup-symbols-if=true
 //src/parser/slp.cup/cup-compact-red=false
 //src/parser/slp.cup/cup-debug=false
 //src/parser/slp.cup/cup-expected-conflicts=0

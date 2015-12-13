@@ -7,11 +7,11 @@ import ast.*;
 import ic.*; 
 
 parser code  {:
-	/** 
-	 * Causes the parser to print every token it reads.
-	 * This is useful for debugging.
-	 */
-	public boolean printTokens;
+	/* Causes the parser to print every token it reads. */
+	public boolean printTokens = false;
+	
+	/* Flag indicating whether there is a syntax error in the program */
+	public boolean errorFlag = false;
 	
 	private Lexer lexer;
 
@@ -25,8 +25,11 @@ parser code  {:
 	}
 	
 	public void syntax_error(Symbol s) {
+		errorFlag = true;
+	
 		Token tok = (Token) s;
-		System.out.println("Line " + tok.getLine()+": Syntax error; unexpected " + tok.getValue());
+		System.err.println("Syntax Error: Unexpected \'" + tok.getValue() + "\' at line " + tok.getLine());
+		System.exit(-1);
 	}
 :}
 

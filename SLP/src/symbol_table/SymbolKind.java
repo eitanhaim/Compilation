@@ -1,11 +1,9 @@
 package symbol_table;
 
 /**
- * an enum representing the available symbol kind of ID symbols.
+ * An enumeration containing all of the symbol kind of ID symbols.
  */
-public enum IDSymbolsKinds {
-	 //Class, Method, Variable, Field;
-	
+public enum SymbolKind {
 	CLASS("Class"),
 	STATIC_METHOD("Static method"),
 	VIRTUAL_METHOD("Virtual method"),
@@ -13,10 +11,10 @@ public enum IDSymbolsKinds {
 	FORMAL("Parameter"),
 	FIELD("Field");
 	
-	private final String repr;       
+	private final String description;       
 
-	private IDSymbolsKinds(String s) {
-			repr = s;
+	private SymbolKind(String description) {
+			this.description = description;
 	}
 	
 	public Boolean isMethodKind() {
@@ -24,7 +22,7 @@ public enum IDSymbolsKinds {
 	}
 	
 	public String toString(){
-		    return repr;
+		    return description;
 	}
 }
 	

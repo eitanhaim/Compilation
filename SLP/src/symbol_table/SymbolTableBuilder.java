@@ -7,41 +7,42 @@ import type_table.*;
 import ast.*;
 
 /**
- * initialized with a program's type table and builds the programs symbol table tree
+ * Builder for a symbol table.
  */
-public class SymbolsTableBuilder implements Visitor {
+public class SymbolTableBuilder implements Visitor {
+	/** Node needed for BFS scanning **/
+	private Queue<ASTNode> nodeHandlingQueue; 
 	
-	private Queue<ASTNode> nodeHandlingQueue; // for BFS scanning
-	private SymbolTable rootSymbolTable; /// a pointer to the GLOBAL symbol table
+	/** The global symbol table **/
+	private SymbolTable rootSymbolTable;
 
-	private SymbolTable currentClassSymbolTablePoint; // for searching scope of variables which
-	// called from external class location.
-	/* for example:
-	 * 	class A { int x; }
-	 * 	class B {
-	 * 		void foo() {
-	 * 			A a = new A();
-	 * 			int y = a.x; // we need to save A's symbol table as the currentClassSymbolTablePoint to know where to look for x.
-	 * 		}
-	 * }
-	 */	
-	private type_table.Type currentMethodType; // for the return statement to have the method type
-	// which it returns value to.
+	/** 
+	 * Class symbol table needed for searching scope of variables which
+	 * called from external class location .
+	 */
+	private SymbolTable currentClassSymbolTablePoint;
+	
+	/** 
+	 * Method type needed for checking the return statement to have 
+	 * the method type which it returns value to.
+	 */
+	private type_table.Type currentMethodType; 
 	
 	private TypeTable typeTable;
-	
 	private SemanticErrorThrower semanticErrorThrower; 
 	
-	int blockCounter; // for giving unique IDs to statements block symbol tables.
+	/** A counter to insure giving unique identifiers to statements block symbol tables. **/
+	int blockCounter; 
 	
 	/**
-	 * main constructor for SymbolsTableBuilder
-	 * @param typeTable the program's type table
-	 * @param tableId the name of the root of the symbols table tree to be built
+	 * Constructs a new symbol table builder.
+	 * 
+	 * @param typeTable The program type table.
+	 * @param tableId   The name of the root of the symbol table tree to be built.
 	 */
-	public SymbolsTableBuilder(TypeTable typeTable, String tableId) {
+	public SymbolTableBuilder(TypeTable typeTable, String tableId) {
 		this.nodeHandlingQueue = new LinkedList<ASTNode>();
-		this.rootSymbolTable = new SymbolTable(tableId, SymbolTableTypes.GLOBAL);
+		this.rootSymbolTable = new SymbolTable(tableId, SymbolTableType.GLOBAL);
 		this.currentClassSymbolTablePoint = null;
 		this.currentMethodType = null;
 		this.typeTable = typeTable;
@@ -49,29 +50,25 @@ public class SymbolsTableBuilder implements Visitor {
 		this.semanticErrorThrower = null;
 	}
 
-	/**
-	 * 
-	 * @return returns currently held symbol table
-	 */
 	public SymbolTable getSymbolTable() {
 		return rootSymbolTable;
 	}
 	
-	/** Builds the program symbol table and do the following things:
-	// 1) Checks there are no calls to variables or methods which were not initialized in their scope.
-	// 	  1.1) Calls to local variables will only be permitted if the variable was initialized before the call.
-	//	  1.2) There is a separation between a class virtual scope and static scope in this check but a class has only one symbol table.
-	// 2) Checks there are no calls to classes which were not declared in the program
-	// 3) Checks variables weren't initialized in their scope more than once.
-	// 4) Checks fields weren't initialized in their scope or in one of their super classes more than once.
-	// 5) Checks methods were not declared more than once in their scope or in one of their
-	//	  super classes unless a method overrides a method with the same signature.
-	// 6) Set types to each of the class, fields, formals and local variables nodes.
-	// 7) Connects each node with its local symbol table.
-	// The AST is scanned in BFS down to the methods level and in DFS from there on.
-	 *
-	 * @param root the AST root of the program to be built
-	 * @throws SemanticError
+	/**
+	 * Builds the program symbol table while checking the following semantic issues:
+	 * - There are no calls to variables or methods which were not initialized in their scope.
+	 * 	  # Note that calls to local variables will only be permitted if the variable was initialized before the call.
+	 *	  # There is a separation between a class virtual scope and static scope in this check but a class has only one symbol table.
+	 * - Checks there are no calls to classes which were not declared in the program
+	 * - Checks variables weren't initialized in their scope more than once.
+	 * - Checks fields weren't initialized in their scope or in one of their super classes more than once.
+	 * - Checks methods were not declared more than once in their scope or in one of their
+	 *	  super classes unless a method overrides a method with the same signature.
+	 * - Set types to each of the class, fields, formals and local variables nodes.
+	 * - Connects each node with its local symbol table.
+	 * The AST is scanned in BFS down to the methods level and in DFS from there on.
+	 * 
+	 * @param root  The root of the AST.
 	 */
 	public void buildSymbolTables(Program root) throws SemanticError {
 		nodeHandlingQueue.add(root);
@@ -93,7 +90,7 @@ public class SymbolsTableBuilder implements Visitor {
 			nodeHandlingQueue.add(iccls);
 			if (!addEntryAndCheckDuplication(programSymbolTable, 
 					new SymbolEntry(iccls.getName(), typeTable.getClassType(iccls.getName()), 
-							IDSymbolsKinds.CLASS))) {
+							SymbolKind.CLASS))) {
 				this.semanticErrorThrower = new SemanticErrorThrower(
 						iccls.getLine(), "class " + iccls.getName() + " is declared more than once");
 				return false;
@@ -106,7 +103,7 @@ public class SymbolsTableBuilder implements Visitor {
 				icclsParentSymbolTable = programSymbolTable;
 			iccls.setSymbolTable(icclsParentSymbolTable);
 			
-			SymbolTable currentClassSymbolTable = new SymbolTable(iccls.getName(), SymbolTableTypes.CLASS);
+			SymbolTable currentClassSymbolTable = new SymbolTable(iccls.getName(), SymbolTableType.CLASS);
 			currentClassSymbolTable.setParentSymbolTable(icclsParentSymbolTable);
 			icclsParentSymbolTable.addTableChild(iccls.getName(), currentClassSymbolTable);
 		}
@@ -120,7 +117,7 @@ public class SymbolsTableBuilder implements Visitor {
 			nodeHandlingQueue.add(field);
 			type_table.Type fieldType = typeTable.getTypeFromASTTypeNode(field.getType());
 			if (!addEntryAndCheckDuplication(currentClassSymbolTable, 
-					new SymbolEntry(field.getName(), fieldType, IDSymbolsKinds.FIELD))) {
+					new SymbolEntry(field.getName(), fieldType, SymbolKind.FIELD))) {
 				this.semanticErrorThrower = new SemanticErrorThrower(
 						field.getLine(), "field " + field.getName() + " is declared more than once");
 				return false;
@@ -140,7 +137,7 @@ public class SymbolsTableBuilder implements Visitor {
 			}
 			method.setEntryType(methodType);
 			method.setSymbolTable(currentClassSymbolTable);
-			SymbolTable currentMethodSymbolTable = new SymbolTable(method.getName(), SymbolTableTypes.METHOD);
+			SymbolTable currentMethodSymbolTable = new SymbolTable(method.getName(), SymbolTableType.METHOD);
 			currentMethodSymbolTable.setParentSymbolTable(currentClassSymbolTable);
 			currentClassSymbolTable.addTableChild(method.getName(), currentMethodSymbolTable);
 		}
@@ -172,7 +169,7 @@ public class SymbolsTableBuilder implements Visitor {
 	public Object visit(Formal formal) {
 		type_table.Type formalType = typeTable.getTypeFromASTTypeNode(formal.getType());
 		if (!addEntryAndCheckDuplication(formal.getSymbolTable(), 
-				new SymbolEntry(formal.getName(), formalType, IDSymbolsKinds.FORMAL))) {
+				new SymbolEntry(formal.getName(), formalType, SymbolKind.FORMAL))) {
 			this.semanticErrorThrower = new SemanticErrorThrower(
 					formal.getLine(), "formal " + formal.getName() + " is declared more than once");
 			return false;
@@ -267,7 +264,7 @@ public class SymbolsTableBuilder implements Visitor {
 	@Override
 	public Object visit(StmtBlock statementsBlock) {
 		this.blockCounter++;
-		SymbolTable blockStmntSymbolTable = new SymbolTable("block#" + blockCounter, SymbolTableTypes.STATEMENT_BLOCK);
+		SymbolTable blockStmntSymbolTable = new SymbolTable("block#" + blockCounter, SymbolTableType.STATEMENT_BLOCK);
 		statementsBlock.getSymbolTable().addTableChild(
 				blockStmntSymbolTable.getId(), blockStmntSymbolTable);
 		blockStmntSymbolTable.setParentSymbolTable(statementsBlock.getSymbolTable());
@@ -290,7 +287,7 @@ public class SymbolsTableBuilder implements Visitor {
 		
 		type_table.Type localVarType = typeTable.getTypeFromASTTypeNode(localVariable.getType());
 		if (!addEntryAndCheckDuplication(localVariable.getSymbolTable(), 
-				new SymbolEntry(localVariable.getName(), localVarType, IDSymbolsKinds.VARIABLE))) {
+				new SymbolEntry(localVariable.getName(), localVarType, SymbolKind.VARIABLE))) {
 			this.semanticErrorThrower = new SemanticErrorThrower(localVariable.getLine(),
 					"variable " + localVariable.getName() + " is initialized more than once");
 			
@@ -350,7 +347,7 @@ public class SymbolsTableBuilder implements Visitor {
 					"the class " + call.getClassName() + " dosen't exist");
 			return false;
 		}
-		SymbolEntry methodEntry = getMethodSymbolEntryFromExternalCall(call.getName(), IDSymbolsKinds.STATIC_METHOD, clsSymbolTable);
+		SymbolEntry methodEntry = getMethodSymbolEntryFromExternalCall(call.getName(), SymbolKind.STATIC_METHOD, clsSymbolTable);
 		if(methodEntry == null) {
 			this.semanticErrorThrower = new SemanticErrorThrower(call.getLine(),
 					"the method " + call.getName() + " dosen't exist");
@@ -373,7 +370,7 @@ public class SymbolsTableBuilder implements Visitor {
 			call.getLocation().setSymbolTable(call.getSymbolTable());
 			if (!(Boolean)call.getLocation().accept(this))
 				return false;
-			methodEntry = getMethodSymbolEntryFromExternalCall(call.getName(), IDSymbolsKinds.VIRTUAL_METHOD, this.currentClassSymbolTablePoint);
+			methodEntry = getMethodSymbolEntryFromExternalCall(call.getName(), SymbolKind.VIRTUAL_METHOD, this.currentClassSymbolTablePoint);
 		}
 		else 
 			methodEntry = getMethodSymbolEntryFromInternalCall(call.getName(), call.getSymbolTable());
@@ -524,9 +521,9 @@ public class SymbolsTableBuilder implements Visitor {
 	private Boolean addEntryAndCheckDuplication(SymbolTable table, SymbolEntry entry) {
 		if (table.hasEntry(entry.getId()))
 			return false;
-		if (entry.getKind() == IDSymbolsKinds.FIELD) {
+		if (entry.getKind() == SymbolKind.FIELD) {
 			SymbolTable scanningTable = table.getParentSymbolTable();
-			while (scanningTable.getTableType() != SymbolTableTypes.GLOBAL) {
+			while (scanningTable.getTableType() != SymbolTableType.GLOBAL) {
 				if (scanningTable.hasEntry(entry.getId()))
 					return false;
 				scanningTable = scanningTable.getParentSymbolTable();
@@ -534,7 +531,7 @@ public class SymbolsTableBuilder implements Visitor {
 		}
 		if (entry.getKind().isMethodKind()) {
 			SymbolTable scanningTable = table.getParentSymbolTable();
-			while (scanningTable.getTableType() != SymbolTableTypes.GLOBAL) {
+			while (scanningTable.getTableType() != SymbolTableType.GLOBAL) {
 				if (scanningTable.hasEntry(entry.getId())) {
 					if (!scanningTable.getEntry(entry.getId()).getType().equals(entry.getType()))
 						return false;
@@ -552,11 +549,11 @@ public class SymbolsTableBuilder implements Visitor {
 	 * @param method method to evaluate
 	 * @return the symbol kind of this method
 	 */
-	private IDSymbolsKinds getMethodKind(Method method) {
+	private SymbolKind getMethodKind(Method method) {
 		if (method instanceof VirtualMethod)
-			return IDSymbolsKinds.VIRTUAL_METHOD;
+			return SymbolKind.VIRTUAL_METHOD;
 		
-		return IDSymbolsKinds.STATIC_METHOD;
+		return SymbolKind.STATIC_METHOD;
 	}
 	
 	/**
@@ -567,10 +564,10 @@ public class SymbolsTableBuilder implements Visitor {
 	 * @return
 	 */
 	private SymbolEntry getVariableSymbolEntry(String name, SymbolTable bottomSymbolTable) {
-		if ((bottomSymbolTable.getTableType() == SymbolTableTypes.METHOD) || 
-				(bottomSymbolTable.getTableType() == SymbolTableTypes.STATEMENT_BLOCK)) {
+		if ((bottomSymbolTable.getTableType() == SymbolTableType.METHOD) || 
+				(bottomSymbolTable.getTableType() == SymbolTableType.STATEMENT_BLOCK)) {
 			// Climbing the symbol table tree up to the symbol table of the method from which contains the variable.
-			while (bottomSymbolTable.getTableType().equals(SymbolTableTypes.STATEMENT_BLOCK)) {
+			while (bottomSymbolTable.getTableType().equals(SymbolTableType.STATEMENT_BLOCK)) {
 				if (bottomSymbolTable.hasEntry(name))
 					return bottomSymbolTable.getEntry(name);
 				bottomSymbolTable = bottomSymbolTable.getParentSymbolTable();
@@ -587,15 +584,15 @@ public class SymbolsTableBuilder implements Visitor {
 			// There so, it must be initialized in one of the method parameters or inside the method.
 			// In that case, the check is done and the entry was not found.
 			if (bottomSymbolTable.getEntry(containigMethodName).getKind() == 
-					IDSymbolsKinds.STATIC_METHOD)
+					SymbolKind.STATIC_METHOD)
 				return null;
 		}
 		
 		// Checking class tables for a suitable field:
-		while (bottomSymbolTable.getTableType() != SymbolTableTypes.GLOBAL) {
+		while (bottomSymbolTable.getTableType() != SymbolTableType.GLOBAL) {
 			SymbolTable clsTable = bottomSymbolTable;
 			if (clsTable.hasEntry(name))
-				if (clsTable.getEntry(name).getKind() == IDSymbolsKinds.FIELD)
+				if (clsTable.getEntry(name).getKind() == SymbolKind.FIELD)
 					return clsTable.getEntry(name);
 			bottomSymbolTable = bottomSymbolTable.getParentSymbolTable();
 		}
@@ -611,7 +608,7 @@ public class SymbolsTableBuilder implements Visitor {
 	 * @return
 	 */
 	private SymbolEntry getMethodSymbolEntryFromExternalCall(
-			String name, IDSymbolsKinds methodKind, SymbolTable bottomClassSymbolTable) {
+			String name, SymbolKind methodKind, SymbolTable bottomClassSymbolTable) {
 		while (bottomClassSymbolTable != null) {
 			if (bottomClassSymbolTable.hasEntry(name))
 				if (bottomClassSymbolTable.getEntry(name).getKind() == methodKind) // An external method mast be consistent with the call type.
@@ -633,20 +630,20 @@ public class SymbolsTableBuilder implements Visitor {
 			String name, SymbolTable bottomSymbolTable) {
 		
 		// Climbing the symbol table tree up to the symbol table of the method from which the call was executed.
-		while (bottomSymbolTable.getTableType().equals(SymbolTableTypes.STATEMENT_BLOCK)) 
+		while (bottomSymbolTable.getTableType().equals(SymbolTableType.STATEMENT_BLOCK)) 
 			bottomSymbolTable = bottomSymbolTable.getParentSymbolTable();
 		
 		// Identifying kind of the method from which the call was executed (static or virtual).
-		IDSymbolsKinds scopeMethodKind = bottomSymbolTable.getParentSymbolTable().
+		SymbolKind scopeMethodKind = bottomSymbolTable.getParentSymbolTable().
 				getEntry(bottomSymbolTable.getId()).getKind();
 		SymbolTable bottomClassSymbolTable = bottomSymbolTable = bottomSymbolTable.getParentSymbolTable();
-		while (bottomClassSymbolTable.getTableType() != SymbolTableTypes.GLOBAL) {
+		while (bottomClassSymbolTable.getTableType() != SymbolTableType.GLOBAL) {
 			if (bottomClassSymbolTable.hasEntry(name)) {
 				if (bottomClassSymbolTable.getEntry(name).getKind().isMethodKind()) { //found a method with same name
-					if (scopeMethodKind == IDSymbolsKinds.VIRTUAL_METHOD) // from a virtual method the call can be to both static and virtual methods.
+					if (scopeMethodKind == SymbolKind.VIRTUAL_METHOD) // from a virtual method the call can be to both static and virtual methods.
 						return bottomClassSymbolTable.getEntry(name);
-					if (scopeMethodKind == IDSymbolsKinds.STATIC_METHOD) { // from a static method the call must be to a static method.
-						if (bottomClassSymbolTable.getEntry(name).getKind() == IDSymbolsKinds.STATIC_METHOD)
+					if (scopeMethodKind == SymbolKind.STATIC_METHOD) { // from a static method the call must be to a static method.
+						if (bottomClassSymbolTable.getEntry(name).getKind() == SymbolKind.STATIC_METHOD)
 							return bottomClassSymbolTable.getEntry(name);
 						else
 							return null; // calling to a virtual method in a virtual call without external scope from a static call is illegal.

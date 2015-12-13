@@ -1,0 +1,106 @@
+package parser;
+import parser.Token;
+import java_cup.runtime.*;
+import ast.*;
+import java.util.List;
+import java.util.ArrayList;
+
+/* Parser code */
+
+parser code  {:
+	/* Flag indicating whether there is a syntax error in the program */
+	public boolean errorFlag = false;
+
+	private LibLexer lexer;
+	
+	public LibParser(LibLexer lexer) {
+		super(lexer);
+		this.lexer = lexer;
+	}
+	
+	public void syntax_error(Symbol s) {
+		errorFlag = true;
+	
+		Token tok = (Token)s;
+		System.err.println("Syntax Error: Unexpected \'" + tok.getValue() + "\' at line " + tok.getLine());
+		System.exit(-1);
+	}:}
+
+/* Preliminaries to set up and use the scanner.  */
+scan with {: 	
+	return lexer.next_token();
+	:};
+
+/* Terminals (tokens returned by the scanner). */
+terminal			VOID_KEYWORD, INT_KEYWORD, BOOLEAN_KEYWORD, STRING_KEYWORD;
+terminal			ID;
+terminal			CLASS_KEYWORD, CLASS_ID, STATIC_KEYWORD;
+terminal            LP, RP, LB, RB, LC, RC, COMMA, SEMICOLON;
+
+/* Non terminals */
+non terminal ICClass libic;
+non terminal LibraryMethod libmethod;
+non terminal List<Method> libmethod_list;
+non terminal List<Formal> formal_list_inter, formal_list, extra_formals;
+non terminal Formal formal;
+non terminal Type type, method_type;
+
+/* Precedences */
+precedence left ID;
+precedence left LC, LP, LB;
+
+/* The grammar */
+
+libic ::= CLASS_KEYWORD:ck CLASS_ID:cid LB libmethod_list:ml RB
+		{: RESULT = new ICClass(ckleft, cid.toString(), new ArrayList<Field>(), ml); :}
+;
+
+
+libmethod_list ::= libmethod_list:ml libmethod:m
+		{: ml.add(m); RESULT = ml; :} 
+		| 
+		{: RESULT = new ArrayList<Method>(); :} 
+;
+
+libmethod ::= STATIC_KEYWORD method_type:mt ID:id LP formal_list_inter:fl RP SEMICOLON
+		{: RESULT = new LibraryMethod(mt, id.toString(), fl); :}
+;
+
+method_type ::= VOID_KEYWORD:v
+		{: RESULT = new PrimitiveType(vleft, ic.DataType.VOID); :}
+		| type:t
+		{: RESULT = t; :}
+;
+
+type ::= type:t LC RC
+		{: t.incrementDimension(); RESULT = t; :}
+		| INT_KEYWORD:intKey
+		{: RESULT = new PrimitiveType(intKeyleft, ic.DataType.INT); :}
+		| BOOLEAN_KEYWORD:boolKey
+		{: RESULT = new PrimitiveType(boolKeyleft, ic.DataType.BOOLEAN); :}
+		| STRING_KEYWORD:strKey
+		{: RESULT = new PrimitiveType(strKeyleft, ic.DataType.STRING); :}
+		| CLASS_ID:c
+		{: RESULT = new UserType(cleft, c.toString()); :}
+;
+
+formal_list_inter ::= 
+		{: RESULT = new ArrayList<Formal>(); :}
+		| formal_list:fl
+		{: RESULT =  fl; :}
+;
+
+formal_list ::= formal:f extra_formals:ef 
+		{: ef.add(0, f); RESULT = ef; :} 
+;
+
+extra_formals ::= 
+		{: RESULT = new ArrayList<Formal>(); :}
+		| COMMA formal:f extra_formals:ef
+		{: ef.add(0, f); RESULT = ef; :} 
+;
+
+formal ::= type:t ID:fName
+		{: RESULT = new Formal(t, fName.toString()); :}
+;
+

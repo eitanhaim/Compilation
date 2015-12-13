@@ -10,39 +10,36 @@ import ast.*;
 import semantic_analysis.*;
 
 /**
- * builds a type table corresponding to a given program
+ * Builder for a type table.
  */
 public class TypeTableBuilder implements Visitor {
-	private final String MAIN_METHOD_CORRECT_SIGNATURE = "string[] -> void";
+	private final String MAIN_METHOD_SIGNATURE = "string[] -> void";
 	
 	private TypeTable builtTypeTable;
 	private SemanticErrorThrower semanticErrorThrower;
-	private String programFilePath;
+	private String icFilePath;
+	
 	/**
-	 * main constructor
-	 * @param tableId name of the type table to be built
+	 * Constructs a new type table builder.
+	 * 
+	 * @param file 	The IC file being compiled
 	 */
 	public TypeTableBuilder(File file) {
-		this.programFilePath = file.getPath();
-		this.builtTypeTable = new TypeTable(file.getName());
+		this.icFilePath = file.getPath();
+		builtTypeTable = new TypeTable(file.getName());
 		builtTypeTable.addPrimitiveTypes();
 	}
 	
-	/**
-	 * @return currently held type table
-	 */
 	public TypeTable getBuiltTypeTable() {
 		return this.builtTypeTable;
 	}
 	
 	/**
-	// Builds the program's Type Table and also checks the following semantic issues:
-	// 1) There is only one Main method with the correct signature (using findAndCheckMainMethod)
-	// 2) Classes only extends classes which were declared before them.
-	//	  (this also prevents any inheritance cycle).
+	 * Builds the program Type Table while checking the following semantic issues:
+	 * - There is only one main method with the correct signature.
+	 * - Classes only extends classes which were declared before them.
 	 * 
-	 * @param program AST node root of the program used to construct the type table
-	 * @throws SemanticError
+	 * @param program  The root of the AST.
 	 */
 	public void buildTypeTable(Program program) throws SemanticError {
 		if (!findAndCheckMainMethod(program))
@@ -51,8 +48,15 @@ public class TypeTableBuilder implements Visitor {
 			semanticErrorThrower.execute();
 	}
 	
-	
+	/**
+	 * Checks if there is only one main method with the correct signature in the program.
+	 * @param program  The root of the AST.
+	 * @return		   True if there is only one main method with the correct signature, 
+	 * 				   otherwise returns false.
+	 */
 	private Boolean findAndCheckMainMethod(Program program) {
+		// count the number of occurrences of main methods in the program
+		// and find the last occurrence of main method
 		int mainMethodCounter = 0;
 		Method lastMainMethod = null;
 		for (ICClass icClass : program.getClasses()) {
@@ -63,10 +67,11 @@ public class TypeTableBuilder implements Visitor {
 				}
 			}
 		}
-		// Main method count checking:
+		
+		// check the legality of mainMethodCounter counter
 		if (mainMethodCounter == 0) {
 			try {
-				LineNumberReader lnr = new LineNumberReader(new FileReader(new File(this.programFilePath)));
+				LineNumberReader lnr = new LineNumberReader(new FileReader(new File(this.icFilePath)));
 				lnr.skip(Long.MAX_VALUE);
 				semanticErrorThrower = new SemanticErrorThrower(lnr.getLineNumber() + 1, "Main Method is missing");
 				lnr.close();
@@ -84,7 +89,7 @@ public class TypeTableBuilder implements Visitor {
 			return false;
 		}
 		
-		// Signature checking and type registering of the main method:
+		// check the legality of the signature of lastMainMethod method
 		if (!(lastMainMethod instanceof StaticMethod)) {
 			semanticErrorThrower = new SemanticErrorThrower(lastMainMethod.getLine(), "Main Method must be static");
 			return false;
@@ -96,7 +101,7 @@ public class TypeTableBuilder implements Visitor {
 		
 		builtTypeTable.addMethodType(lastMainMethod);
 		MethodType methodType = builtTypeTable.getMethodType(lastMainMethod);
-		if (!methodType.toString().equals(MAIN_METHOD_CORRECT_SIGNATURE)) {
+		if (!methodType.toString().equals(MAIN_METHOD_SIGNATURE)) {
 			semanticErrorThrower = new SemanticErrorThrower(lastMainMethod.getLine(), "Main Method has a wrong signature");
 			return false;
 		}
@@ -114,8 +119,7 @@ public class TypeTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(ICClass icClass) {
-		// Checks if the class extends a class which was not 
-		// declared before (including class extending itself situation).
+		// checks if the class extends a class which was not declared before 
 		if (!builtTypeTable.addClassType(icClass)) {
 			semanticErrorThrower = new SemanticErrorThrower(icClass.getLine(),
 					"extended class " + icClass.getSuperClassName() + " was not declared");
@@ -150,6 +154,25 @@ public class TypeTableBuilder implements Visitor {
 	public Object visit(LibraryMethod method) {
 		return visitMethod(method);
 	}
+	
+	/**
+	 * Visit any kind of method.
+	 * 
+	 * @param method  Method to visit.
+	 * @return 		  null
+	 */
+	private Object visitMethod(Method method) {
+		for (Formal formal : method.getFormals())
+			formal.accept(this);
+		method.getType().accept(this);
+		
+		// method type registration
+		builtTypeTable.addMethodType(method);
+		for (Stmt stmnt : method.getStatements())
+			stmnt.accept(this);
+		
+		return null;
+	}
 
 	@Override
 	public Object visit(Formal formal) {
@@ -166,6 +189,30 @@ public class TypeTableBuilder implements Visitor {
 	@Override
 	public Object visit(UserType type) {
 		return visitType(type);
+	}
+	
+	/**
+	 * Visit any kind of ast.Type
+	 * 
+	 * @param type  Type to visit
+	 * @return 		null
+	 */
+	private Object visitType(ast.Type type) {
+		// array type registration.
+		if (isArrayType(type))
+			builtTypeTable.addArrayType(type);
+		
+		return null;
+	}
+	
+	/**
+	 * Checks if the specified type node is an array type (its dimension > 0 ).
+	 * 
+	 * @param typeNode  A type node.
+	 * @return 			True if typeNode is an array type, otherwise return false.
+	 */
+	private Boolean isArrayType(ast.Type typeNode) {
+		return (typeNode.getDimension() > 0);
 	}
 
 	@Override
@@ -293,44 +340,5 @@ public class TypeTableBuilder implements Visitor {
 	@Override
 	public Object visit(ExprBlock expressionBlock) {
 		return null;
-	}
-
-	/**
-	 * visit for general method
-	 * @param method method to visit
-	 * @return null
-	 */
-	private Object visitMethod(Method method) {
-		for (Formal formal : method.getFormals())
-			formal.accept(this);
-		method.getType().accept(this);
-		// method type registration
-		builtTypeTable.addMethodType(method);
-		for (Stmt stmnt : method.getStatements())
-			stmnt.accept(this);
-		
-		return null;
-	}
-	
-	/**
-	 * visit for general ast.Type type
-	 * @param type
-	 * @return null
-	 */
-	private Object visitType(ast.Type type) {
-		// array type registration.
-		if (isArrayType(type))
-			builtTypeTable.addArrayType(type);
-		
-		return null;
-	}
-	
-	/**
-	 * 
-	 * @param typeNode
-	 * @return true iff the type is an array (dimension > 0)
-	 */
-	private Boolean isArrayType(ast.Type typeNode) {
-		return (typeNode.getDimension() > 0);
 	}
 }

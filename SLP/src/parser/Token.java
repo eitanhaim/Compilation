@@ -18,8 +18,8 @@ public class Token extends Symbol {
 		super(id, line + 1, column + 1, value);
 
 		this.name = name;
-		this.lineNumber = line;
-		this.columnNumber = column;
+		this.lineNumber = line + 1;
+		this.columnNumber = column + 1;
 	}
 
 	public int getId() {

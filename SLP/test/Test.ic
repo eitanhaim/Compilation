@@ -1,3 +1,10 @@
+class A {
+	int foo()
+	{
+		return "1";
+	}
+}
+
 class Test {
 
 	int x;
@@ -7,18 +14,19 @@ class Test {
 	{
 		if (n == 1 || n == 0)
 			return n;
+		return 2;
 		//else
 			//return fib(n-1);
 	}
 	
-	static void main(string[] args)
+	/*static void main(string[] args)
 	{
 		//fib(3, 2);
 		
-		Bob b = new Bob();
+		//Bob b = new Bob();
+		A a;
 		
-		
-		String s = 3;
-	}
+		//string s = 3;
+	}*/
 
 }

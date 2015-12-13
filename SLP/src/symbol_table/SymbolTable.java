@@ -7,73 +7,112 @@ import java.util.Map;
 
 /**
  * Data structure representing symbol table tree node
- *
  */
 public class SymbolTable {
-	  /** map from String to Symbol **/	  
-	  
 	  private String id;
-	  private SymbolTableTypes tableType;
+	  private SymbolTableType tableType;
 	  
-	  private Map<String,SymbolEntry> entries;
+	  /** A map representing the entries in the symbol table. **/
+	  private Map<String,SymbolEntry> entries; 
+	  
+	  /** Fields for accessing the parent or the children of the symbol table respectively. **/
 	  private SymbolTable parentSymbolTable;
-
 	  private Map<String, SymbolTable> children;
 	  
-	  private List<SymbolEntry> sorted_entries; // is used for prints in printTable() method
-	  private List<SymbolTable> sorted_children; // is used for prints in printTable() method
+	  /** Sorted version of entries and children used from printing the whole table. */
+	  private List<SymbolEntry> sorted_entries; 
+	  private List<SymbolTable> sorted_children; 
 	  
 	  /**
-	   * Creates a new symbol table.
-	   * @param id name of symbol table.
-	   * @param tableType type of symbol table.
+	   * Constructs a new symbol table.
+	   * 
+	   * @param id 		   Symbol table name.
+	   * @param tableType  Symbol table type.
 	   */
-	  public SymbolTable(String id, SymbolTableTypes tableType) {
+	  public SymbolTable(String id, SymbolTableType tableType) {
 	    this.id = id;
 	    this.tableType = tableType;
-	    this.entries = new HashMap<String,SymbolEntry>();
-	    this.children = new HashMap<String, SymbolTable>();
 	    
-	    this.sorted_entries = new ArrayList<SymbolEntry>();
-	    this.sorted_children = new ArrayList<SymbolTable>();
-	    this.parentSymbolTable = null;
+	    entries = new HashMap<String,SymbolEntry>();
+	    children = new HashMap<String, SymbolTable>();
+	    sorted_entries = new ArrayList<SymbolEntry>();
+	    sorted_children = new ArrayList<SymbolTable>();
+	    parentSymbolTable = null;
 	  }
 
-	  /**
-	   * 
-	   * @return name of this symbol table instance.
-	   */
 	  public String getId() {
 		return id;
 	  }
 	  
-	  /**
-	   * 
-	   * @return this symbol table's name to entry mapping.
-	   */
 	  public Map<String,SymbolEntry> getEntries()
 	  {
 		  return this.entries;
 	  }
 	  
-	  /**
-	   * 
-	   * @return the table type of this symbol table.
-	   */
-	  public SymbolTableTypes getTableType() {
+	  public SymbolTableType getTableType() {
 		return tableType;
 	  }
 	  
+	  public SymbolTable getParentSymbolTable() {
+		  return parentSymbolTable;
+	  }
+
+	  public void setParentSymbolTable(SymbolTable parentSymbolTable) {
+		  this.parentSymbolTable = parentSymbolTable;
+	  }
+	  
+	  
 	  /**
-	   * Searches this symbol table's tree for the speicified class name
-	   * @param className the name of the class to look for
-	   * @return Symbol table of the class if in this scope's sub-tree, or null of not found.
+	   * Adds the specified key and symbol table to this table children.
+	   * 
+	   * @param key 		 Symbol table name.
+	   * @param symbolTable  Symbol table to add.
+	   */
+	  public void addTableChild(String key, SymbolTable symbolTable) {
+		  this.children.put(key, symbolTable);
+		  this.sorted_children.add(symbolTable);
+	  }
+	  
+	  /**
+	   * Adds the specified key and symbol entry to this table entries.
+	   * 
+	   * @param key    Symbol entry name.
+	   * @param entry  Symbol entry to add.
+	   */
+	  public void addEntry(String key, SymbolEntry entry) {
+		  this.entries.put(key, entry);
+		  this.sorted_entries.add(entry);
+	  }
+	  
+	  /**
+	   * Checks if this table has the specified key is in its entries.
+	   * 
+	   * @param key  Symbol entry name to look for.
+	   * @return 	 True if the table has the specified key is in its entries, otherwise returns false.
+	   */
+	  public Boolean hasEntry(String key) {
+		  return this.entries.containsKey(key);
+	  }
+	  
+	  /**
+	   * Gets the entry associated with the specified key.
+	   * 
+	   * @param key  Symbol entry name.
+	   * @return 	 Symbol entry associated with the specified key.
+	   */
+	  public SymbolEntry getEntry(String key) {
+		  return this.entries.get(key);
+	  }
+	  
+	  /**
+	   * Searches in the tree of this table for the specified class name.
+	   * 
+	   * @param className  The name of the class to look for.
+	   * @return 		   Symbol table of the class if it in this scope sub-tree, otherwise returns null.
 	   */
 	  public SymbolTable getClassScope(String className) {
 			if (id.equals(className)) 
-			{
 				return this;
-			}
 			
 			for (SymbolTable subTable : children.values()) {
 				SymbolTable table = subTable.getClassScope(className);
@@ -85,48 +124,41 @@ public class SymbolTable {
 		}
 	  
 	  /**
-	   * Adds this key and symbol to the table's mapping
-	   * @param key entry name
-	   * @param entry entry
-	   */
-	  public void addEntry(String key, SymbolEntry entry) {
-		  this.entries.put(key, entry);
-		  this.sorted_entries.add(entry);
-	  }
-	  
-	  /**
+	   * Searches in the tree of this table for a child (or this) table with the specified id.
 	   * 
-	   * @param key name to search in the mapping
-	   * @return true iff this table has key in its entry mapping.
+	   * @param id  Name of symbol table to look for.
+	   * @return 	The child symbol table or null if not found.
 	   */
-	  public Boolean hasEntry(String key) {
-		  return this.entries.containsKey(key);
+	  public SymbolTable findChildSymbolTable(String id) {
+		  return findChildSymbolTableRecursive(this, id);
 	  }
 	  
 	  /**
+	   * Searches recursively in the tree rooted by root for a child (or this) table with the specified id
 	   * 
-	   * @param key
-	   * @return entry associated with this key
+	   * @param root  Root of table tree to search in.
+	   * @param id	  Name of symbol table to look for.
+	   * @return	  The child symbol table or null if not found,
 	   */
-	  public SymbolEntry getEntry(String key) {
-		  return this.entries.get(key);
+	  private SymbolTable findChildSymbolTableRecursive(SymbolTable root, String id) {
+		  for (String tableID : root.children.keySet()) {
+			  if (id.equals(tableID))
+				  return root.children.get(id);
+			  else {
+				  SymbolTable result = findChildSymbolTableRecursive(
+						root.children.get(tableID), id);
+				  if (result != null)
+					  return result;
+			  }
+		  }
+		  return null;
 	  }
 	  
 	  /**
-	   * Adds parameter symbol table to this symbol table's children
-	   * @param key name of symbol table
-	   * @param symbolTable new child symbol table
-	   */
-	  public void addTableChild(String key, SymbolTable symbolTable) {
-		  this.children.put(key, symbolTable);
-		  this.sorted_children.add(symbolTable);
-	  }
-	  
-	  /**
-	   * prints the table to System.out
+	   * Prints the symbol table to System.out
 	   */
 	  public void printTable() {
-		  if (this.tableType != SymbolTableTypes.STATEMENT_BLOCK)
+		  if (this.tableType != SymbolTableType.STATEMENT_BLOCK)
 			  System.out.println(tableType.toString() + " Symbol Table: " + id);
 		  else
 			  System.out.println(tableType.toString() + " Symbol Table ( located in " + 
@@ -136,7 +168,7 @@ public class SymbolTable {
 			  System.out.println("    " +  sorted_entries.get(i).toString());
 		  
 		  if (sorted_children.size() > 0) {
-			  if (this.tableType == SymbolTableTypes.CLASS)
+			  if (this.tableType == SymbolTableType.CLASS)
 				  moveClassChildrenToEnd();
 			  System.out.print("Children tables: ");
 			  Boolean isFirstChild = true;
@@ -156,68 +188,26 @@ public class SymbolTable {
 	  }
 	  
 	  /**
-	   * Searches this symbol table tree for a child (or this) table with id
-	   * @param id name of symbol table to look for
-	   * @return the child symbol table or null if not found
+	   * Moves the class children to the end of the list sorted_children.
 	   */
-	  public SymbolTable findChildSymbolTable(String id) {
-		  return findChildSymbolTableRecursive(this, id);
-	  }
-	  
-	  /**
-	   * 
-	   * @return parent symbol table
-	   */
-	  public SymbolTable getParentSymbolTable() {
-		  return parentSymbolTable;
-	  }
-
-	  /**
-	   * Sets this table's parent table
-	   * @param parentSymbolTable parent table to set
-	   */
-	  public void setParentSymbolTable(SymbolTable parentSymbolTable) {
-		  this.parentSymbolTable = parentSymbolTable;
+	  private void moveClassChildrenToEnd() {
+		  int classesCounter = 0;
+		  for (int i = 0; i < sorted_children.size() - classesCounter; i++) {
+			  if (sorted_children.get(i).tableType == SymbolTableType.CLASS) {
+				  SymbolTable classSymbolTable = sorted_children.get(i);
+				  sorted_children.remove(classSymbolTable);
+				  sorted_children.add(classSymbolTable);
+				  classesCounter++;
+			  }
+		  }
 	  }
 	  
 	  @Override
 	  public String toString() {
-		  if (this.tableType != SymbolTableTypes.STATEMENT_BLOCK)
+		  if (this.tableType != SymbolTableType.STATEMENT_BLOCK)
 			  return id;
 		  else
 			  return "statement block in " + parentSymbolTable.toString();
-	  }
-	  
-	  /*/**
-	   * recursively look for a symbol table with name id in root table tree
-	   * @param root root of table tree to search in
-	   * @param id name of the table we're looking for
-	   * @return symbol table child of root with name id if found, or null if not found.
-	   */
-	  private SymbolTable findChildSymbolTableRecursive(SymbolTable root, String id) {
-		  for (String tableID : root.children.keySet()) {
-			  if (id.equals(tableID))
-				  return root.children.get(id);
-			  else {
-				  SymbolTable result = findChildSymbolTableRecursive(
-						root.children.get(tableID), id);
-				  if (result != null)
-					  return result;
-			  }
-		  }
-		  return null;
-	  }
-	  
-	  private void moveClassChildrenToEnd() {
-		  int classesCounter = 0;
-		  for (int i = 0; i < sorted_children.size() - classesCounter; i++) {
-			  if (sorted_children.get(i).tableType == SymbolTableTypes.CLASS) {
-				  SymbolTable clsSymbolTable = sorted_children.get(i);
-				  sorted_children.remove(clsSymbolTable);
-				  sorted_children.add(clsSymbolTable);
-				  classesCounter++;
-			  }
-		  }
 	  }
 }
 

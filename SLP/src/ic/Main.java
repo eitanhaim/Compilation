@@ -5,16 +5,19 @@ import java_cup.runtime.*;
 
 import ast.*;
 import parser.*;
-import semantic_analysis.SemanticError;
-import symbol_table.SymbolsTableBuilder;
+import semantic_analysis.*;
+import symbol_table.SymbolTableBuilder;
 import type_table.TypeTableBuilder;
 import type_table.TypeValidator;
 
 /** 
  * The entry point of the IC application.
  */
-public class Main {
-	private static boolean printtokens = false;
+public class Main {	
+	private static final String DEFAULT_LIB_PATH = "libic.sig";
+	private static final String LIB_NAME = "Library";
+
+	private static String icPath = null, libPath = DEFAULT_LIB_PATH;
 	private static boolean printast = false;
 	
 	/** 
@@ -23,90 +26,162 @@ public class Main {
 	 * 
 	 * @param args	The name of the file containing an IC program.
 	 */
-	public static void main(String[] args) {
-		FileReader txtFile = null;
-		Symbol parseSymbol = null;
-		
-		try {			
-			// parse command line arguments
-			if (args.length == 0) {
-				System.out.println("Error: Missing input file argument!");
-				printUsage();
-				System.exit(-1);
-			}
-			if (args.length >= 2)
-			{
-				for (String arg : args) {
-					if (arg.equals("-printtokens"))
-						printtokens = true;
-					else if (arg.equals("-printast"))
-						printast = true;						
-				}
-				
-				if (!printtokens && !printast)
-				{
-					printUsage();
-					System.exit(-1);
-				}	
-			}
+	public static void main(String[] args) {		
+		try {	
+			parseInput(args);
 			
-			// TODO: add code regarding Library
+			// parse the library file
+			ICClass libRoot = parseLibFile();
+			if (libRoot == null)
+				return;
 			
-			// scan the IC program
-			txtFile = new FileReader(args[0]);
-			Lexer scanner = new Lexer(txtFile);
+			// parse the IC file
+			Program icRoot = parseICFile();
+			if (icRoot == null)
+				return;
 			
-			// parse the IC program
-			Parser parser = new Parser(scanner); 
-			parser.printTokens = printtokens;
-			parseSymbol = parser.parse();
-			//System.out.println("Parsed " + args[0] + " successfully!");
+			// make sure that the Library class has the correct name
+			if(!libRoot.getName().equals(LIB_NAME)) 
+				throw new SemanticError(1, "Library class has incorrect name: "+ libRoot.getName() + ", expected " + LIB_NAME);
+			else  // append the library
+				icRoot.getClasses().add(0, libRoot); 
+			
+			// analyze the IC file semantically 
+			TypeTableBuilder typeTableBuilder = new TypeTableBuilder(new File(icPath));
+			typeTableBuilder.buildTypeTable(icRoot);
+			SymbolTableBuilder symbolTableBuilder = new SymbolTableBuilder(typeTableBuilder.getBuiltTypeTable(), icPath);
+			symbolTableBuilder.buildSymbolTables(icRoot);
 
-			Program root = (Program) parseSymbol.value;	
-			
-			// analyze the IC program semantically 
-			TypeTableBuilder typeTableBuilder = new TypeTableBuilder(new File(args[0]));
-			typeTableBuilder.buildTypeTable(root);
-			SymbolsTableBuilder s = new SymbolsTableBuilder(typeTableBuilder.getBuiltTypeTable(), args[0]);
-			s.buildSymbolTables(root);
-
-			TypeValidator tv = new TypeValidator(typeTableBuilder.getBuiltTypeTable());
-			tv.validate(root);
+			TypeValidator TypeValidator = new TypeValidator(typeTableBuilder.getBuiltTypeTable());
+			TypeValidator.validate(icRoot);
             
-            // pretty-print the program to System.out, if requested
-            if (printast && (root != null))
+            // pretty-print the AST to System.out, if requested
+            if (printast && (icRoot != null))
             { 
-            	PrettyPrinter printer = new PrettyPrinter(args[0], root);
+            	PrettyPrinter printer = new PrettyPrinter(args[0], icRoot);
             	printer.print();
             }
-            
-		} catch (FileNotFoundException fnfException) {
-            System.err.println("The file " + args[0] + " not found");
-        } catch (LexicalError lexicalError) {
-            System.err.println("LexicalError: " + lexicalError.getMessage());
-        } catch (SyntaxError syntaxError) {
-            System.err.println("SyntaxError: " + syntaxError.getMessage());
-        } catch (SemanticError semanticError) {
-            System.err.println("SemanticError: " + semanticError.getMessage());
+		} catch (SemanticError semanticError) {
+            System.err.println("Semantic Error: " + semanticError.getMessage());
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.err.println("IO Error (brutal exit) " + ex.getMessage() + " " + parseSymbol.value);
-        } finally {
-            try {
-                if (txtFile != null) {
-                    txtFile.close();
-                }
-            } catch (IOException ex) {
-                System.err.println("txtFile.close()");
-            }
-        }
+        } 
+	}
+	
+	/**
+	 * Parses the command line arguments
+	 * 
+	 * @param args	The command line arguments.
+	 */
+	private static void parseInput(String[] args)
+	{
+		if (args.length == 0 || args.length > 3) { // invalid input
+			if (args.length == 0)
+				System.out.println("Error: Missing input file argument!");
+			else
+				System.out.println("Error: Too much arguments!");
+			printUsage();
+			System.exit(-1);
+		}
+		else if (args.length >= 2) { // parse optional arguments
+			for (String arg : args) {
+				if (arg.equals("-printast"))
+					printast = true;
+				else if (arg.startsWith("-L"))
+					libPath = arg.substring(2);
+			}	
+		}
 		
+		icPath = args[0];
 	}
 	
 	/** 
 	 * Prints usage information about this application to System.out
 	 */
-	public static void printUsage() {
-		System.out.println("Usage: ic file [-printtokens] [-printast]");
+	private static void printUsage() {
+		System.out.println("Usage: <ic file> [-printast] [-L<lib file>]");
 	}
+	
+	/**
+	 * Parses the library file.
+	 * 
+	 * @return A ICClass AST node constituting the AST root of the Library program.
+	 */
+	private static ICClass parseLibFile()
+	{
+		FileReader libFileReader = null;
+		Symbol libParseSymbol = null;
+		
+		try {
+			File libFile = new File(libPath);
+			libFileReader = new  FileReader(libFile);
+			LibLexer libScanner = new LibLexer(libFileReader);
+			LibParser libParser = new LibParser(libScanner);
+			
+			libParseSymbol = libParser.parse();
+			if(libParser.errorFlag)
+				return null;
+			
+			return (ICClass) libParseSymbol.value;
+		} catch (FileNotFoundException fnfException) {
+            System.err.println("The file " + libPath + " not found");
+        } catch (LexicalError lexicalError) {
+            System.err.println("Lexical Error: " + lexicalError.getMessage());
+        } catch (SyntaxError syntaxError) {
+            System.err.println("Syntax Error: " + syntaxError.getMessage());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.err.println("IO Error (brutal exit) " + ex.getMessage() + " " + libParseSymbol.value);
+        } finally {
+        	try {
+        		if (libFileReader != null) 
+        			libFileReader.close();
+        	} catch (IOException ex) {
+        		System.err.println("Error: closing the lib file reader has failed");
+        	}
+        }
+		
+    	return null;
+	}
+	
+	/**
+	 * Parses the IC file.
+	 * 
+	 * @return	A Program AST node constituting the AST root of the IC program.
+	 */
+	private static Program parseICFile() {
+		FileReader icFileReader = null;	
+		Symbol parseSymbol = null;
+
+        try {
+        	File icFile = new File(icPath);
+			icFileReader = new FileReader(icFile);
+			Lexer scanner = new Lexer(icFileReader);
+			Parser parser = new Parser(scanner);
+			
+			parseSymbol = parser.parse();
+			if(parser.errorFlag)
+				return null;
+
+            return (Program) parseSymbol.value;
+        } catch (FileNotFoundException fnfException) {
+            System.err.println("The file " + icPath + " not found");
+        } catch (LexicalError lexicalError) {
+            System.err.println("Lexical Error: " + lexicalError.getMessage());
+        } catch (SyntaxError syntaxError) {
+            System.err.println("Syntax Error: " + syntaxError.getMessage());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.err.println("IO Error (brutal exit) " + ex.getMessage() + " " + parseSymbol.value);
+        } finally {
+        	try {
+        		if (icFileReader != null) 
+                    icFileReader.close();
+        	} catch (IOException ex) {
+        		System.err.println("Error: closing the ic file reader has failed");
+        	}
+        }
+
+        return null;
+    }
 }

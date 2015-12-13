@@ -13,7 +13,7 @@ public class PrettyPrinter implements Visitor {
 	 * Constructs a new pretty printer visitor.
 	 * 
 	 * @param ICFilePath  The path + name of the IC file being compiled.
-	 * @param root The root of the AST.
+	 * @param root 		  The root of the AST.
 	 */
 	public PrettyPrinter(String ICFilePath, ASTNode root) {
 		this.ICFilePath = ICFilePath;
