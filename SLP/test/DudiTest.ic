@@ -38,10 +38,11 @@ r = true;
 	}
 
 }
-
+/*
 static void main(string[] args)
 {
-	my_func(3);
-}
+	Dudi d;
+	d.my_func(3);
+}*/
 
 }

@@ -5,6 +5,7 @@ class A {
 	}
 }
 
+
 class Test {
 
 	int x;
@@ -21,7 +22,7 @@ class Test {
 	
 	/*static void main(string[] args)
 	{
-		//fib(3, 2);
+		fib(3, 2);
 		
 		//Bob b = new Bob();
 		A a;
