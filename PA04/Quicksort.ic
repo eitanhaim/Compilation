@@ -66,14 +66,14 @@ class Quicksort {
     }
 
     static void main(string[] args) {
-    int n;
+    int n = 1;
 
     //if (args.length != 1) {
     //    Library.println("Unspecified array length");
     //    Library.exit(1);
     //}
 
-    n = Library.stoi("1",0); //Library.stoi(args[0],0);
+    //n = Library.stoi("1",0); //Library.stoi(args[0],0);
     if (n<=0) {
         Library.println("Invalid array length");
         Library.exit(1);
