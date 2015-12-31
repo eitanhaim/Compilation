@@ -23,38 +23,10 @@ parser code  {:
 	
 	public void syntax_error(Symbol s)
 	{
-        StringBuilder sb = new StringBuilder();
-        Token token = (Token)s;
-        sb.append("expected ");
-        
-        if (s.right > 0) {
-            boolean isFirst = true;
-            expected_token_ids();
-            expected_token_ids();
-            for (Integer expected : expected_token_ids()) {
-                if (!isFirst)
-                    sb.append(" or ");
-                else
-                    isFirst = false;
-
-                sb.append('\'');
-                sb.append(sym.terminalNames[expected]);
-                sb.append('\'');
-            }
-        } else {
-            sb.append("end of input");
-        }
-        if (token == null)
-        {
-            //throw new SyntaxError(sb.toString(), 0, 0);
-        	 System.out.println("0:0 : Syntax error; " + sb.toString());
-        } else {
-            sb.append(", but found \'");
-            sb.append(token.getTag());
-            sb.append('\''); 
-            //throw new SyntaxError(sb.toString(), token.getLine(), token.getColumn());
-            System.out.println("" +token.getLine()+":"+token.getColumn()+" : Syntax error; " + sb.toString());
-        }
+		Token tok = (Token)s;
+		System.err.println("Syntax Error: Unexpected \'" + tok.getValue() + "\' at line " + tok.getLine());
+		System.exit(-1);
+		
 	}
 	
 	public void report_error(String message, Object info)
