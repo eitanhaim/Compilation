@@ -99,19 +99,23 @@ public class TranslationVisitor implements Visitor{
 		this.arrs = new HashMap<String,Integer>();
 	}
 
-	public void printInstructions() {
+	public String printInstructions() {
+		StringBuffer output = new StringBuffer();
+		
 		//print string literals
 		for(StringLiteral sl : stringLiterals.toStringLiteralList())
-			System.out.println(sl.toString());
+			output.append(sl.toString() + "\n");
 
 		//print dispatch tables
 		for(ClassLayout cl : classLayouts.values()) {
-			System.out.println(cl);
+			output.append(cl + "\n");
 		}
 
 		//print instructions
 		for (Instruction inst : instructions)
-			System.out.println(inst.toString());
+			output.append(inst.toString() + "\n");
+		
+		return output.toString();
 	}
 
 	public void translate(Program root)  {

@@ -48,7 +48,8 @@ class Quicksort {
     void initArray() {
     int i = 0;
     while(i < a.length) {
-        a[i] =  Library.random(a.length*2);
+        //a[i] =  Library.random(a.length*2);
+        a[i] = 1;
         i = i+1;
     }
     }

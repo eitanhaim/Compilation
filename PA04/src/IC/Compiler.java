@@ -2,6 +2,7 @@ package IC;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.PrintWriter;
 
 import java_cup.runtime.Symbol;
 import IC.AST.*;
@@ -88,7 +89,9 @@ public class Compiler {
 			if(isInArgs(args, "-print-lir"))
 			{
 				System.out.println("printing LIR!!!!!");
-				trv.printInstructions();
+				PrintWriter writer = new PrintWriter("output.lir");
+				writer.print(trv.printInstructions());
+				writer.close();
 			}
 			
 		} catch (FileNotFoundException e) {

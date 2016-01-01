@@ -2,9 +2,6 @@ package IC.lir;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import IC.lir.Instructions.Instruction;
-import IC.lir.Instructions.LabelInstr;
 import IC.lir.Instructions.StringLiteral;
 
 public class StringLiterals {
@@ -22,6 +19,7 @@ public class StringLiterals {
 	 */
 	public int add(String s) {
 		if(!literals.contains(s)) {
+			s = escapeICString(s);
 			literals.add(s);
 			StringLiteral sl = new StringLiteral("str"+literals.indexOf(s),"\""+ s+"\"");
 			sl.assignAddress(literals.indexOf(s));
@@ -29,7 +27,42 @@ public class StringLiterals {
 		}
 		return literals.indexOf(s);
 	}
-
+	
+	/**
+	 * Escapes the characters in a string using IC String rules.
+	 * 
+	 * @param str	A string optionally containing standard IC escape sequences.
+	 * @return 		The translated string.
+	 */
+	public String escapeICString(String str) {
+	    StringBuilder result = new StringBuilder(str.length());
+	    
+	    for (int i = 0; i < str.length(); i++) {
+	        char currChar = str.charAt(i);
+	        switch (currChar) {
+            case '\n':
+	        	result.append("\\n");
+                break;
+            case '\t':
+	        	result.append("\\t");
+                break;
+            case '\r':
+	        	result.append("\\r");
+                break;
+            case '\"':
+	        	result.append("\\\"");
+                break;
+	        case '\\':
+	        	result.append("\\\\");
+                break;
+            default:
+    	        result.append(currChar);
+            }  
+	    }
+	    
+	    return result.toString();
+	}
+	
 	/**
 	 * @return all strings literals in a form of a list of string literals.
 	 */

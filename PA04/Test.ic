@@ -1,12 +1,6 @@
 class Test {
-    int[] a;
-
-    static int foo() {
-    	return 1;
-    }
     
-    static void main(string[] args) {
- 		int b = foo();
-    	string s = "hello";
+    static void main(string[] args) {    	
+    	Library.print("hello\tbye!");
     }
 }
