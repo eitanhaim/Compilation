@@ -102,7 +102,7 @@ public class TranslationVisitor implements Visitor{
 	public void printInstructions() {
 		//print string literals
 		for(StringLiteral sl : stringLiterals.toStringLiteralList())
-			System.out.println(sl.toString().replace("\n", "\\n"));
+			System.out.println(sl.toString().replace("\n", "\\n").replace("\t", "\\t"));
 
 		//print dispatch tables
 		for(ClassLayout cl : classLayouts.values()) {
