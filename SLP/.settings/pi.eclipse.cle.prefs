@@ -1,3 +1,13 @@
+//src/parser/IC.cup/cup-compact-red=false
+//src/parser/IC.cup/cup-debug=false
+//src/parser/IC.cup/cup-expected-conflicts=0
+//src/parser/IC.cup/cup-no-positions=false
+//src/parser/IC.cup/cup-no-scanner=false
+//src/parser/IC.cup/cup-non-terms=false
+//src/parser/IC.cup/cup-output=src
+//src/parser/IC.cup/cup-parser-class=Parser
+//src/parser/IC.cup/cup-symbols-class=sym
+//src/parser/IC.cup/cup-symbols-if=true
 //src/parser/Library.cup/cup-compact-red=false
 //src/parser/Library.cup/cup-debug=false
 //src/parser/Library.cup/cup-expected-conflicts=0
