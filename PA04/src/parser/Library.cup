@@ -1,4 +1,5 @@
 package parser;
+import parser.Token;
 import java_cup.runtime.*;
 import ast.*;
 import java.util.List;
@@ -9,7 +10,7 @@ import java.util.ArrayList;
 parser code  {:
 	/* Flag indicating whether there is a syntax error in the program */
 	public boolean errorFlag = false;
-	
+
 	private LibLexer lexer;
 	
 	public LibParser(LibLexer lexer) {
@@ -17,15 +18,13 @@ parser code  {:
 		this.lexer = lexer;
 	}
 	
-	public void syntax_error(Symbol s)
-	{
+	public void syntax_error(Symbol s) {
 		errorFlag = true;
+	
 		Token tok = (Token)s;
 		System.err.println("Syntax Error: Unexpected \'" + tok.getValue() + "\' at line " + tok.getLine());
 		System.exit(-1);
-		
-	}
-:}
+	}:}
 
 /* Preliminaries to set up and use the scanner.  */
 scan with {: 	

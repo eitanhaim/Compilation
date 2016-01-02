@@ -1,8 +1,10 @@
 package parser;
+
 import java_cup.runtime.*;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 import ast.*;
+import ic.*; 
 
 parser code  {:
 	/* Causes the parser to print every token it reads. */
@@ -12,290 +14,301 @@ parser code  {:
 	public boolean errorFlag = false;
 	
 	private Lexer lexer;
-	
+
 	public Parser(Lexer lexer) {
 		super(lexer);
 		this.lexer = lexer;
 	}
 	
-	public void syntax_error(Symbol s)
-	{
+	public void syntax_error(Symbol s) {
 		errorFlag = true;
+	
 		Token tok = (Token) s;
 		System.err.println("Syntax Error: Unexpected \'" + tok.getValue() + "\' at line " + tok.getLine());
 		System.exit(-1);
 	}
 :}
 
-scan with 
-{: 
+// This is just for debugging
+scan with {:
 	Token t = lexer.next_token();
 	if (printTokens)
 		System.out.println(t.getLine() + ":" + t);
-	return lexer.next_token();
+	return t; 
 :};
 
-/* Terminals (tokens returned by the scanner). */
-terminal			ID, CLASS_ID, SEMICOLON, COMMA;
-
-// Keywords
-terminal			CLASS_KEYWORD, EXTENDS_KEYWORD, STATIC_KEYWORD, VOID_KEYWORD,
-					INT_KEYWORD, BOOLEAN_KEYWORD, STRING_KEYWORD, RETURN_KEYWORD,
-					IF_KEYWORD, ELSE_KEYWORD, WHILE_KEYWORD, BREAK_KEYWORD, CONTINUE_KEYWORD,
-					THIS_KEYWORD, NEW_KEYWORD, LENGTH_KEYWORD;
-
-// Literals
-terminal			TRUE_LITERAL, FALSE_LITERAL, NULL_LITERAL, STRING_LITERAL;
-terminal Integer    INTEGER_LITERAL;
-
-// Operators and signs
-terminal			LP, RP, LC, RC, LB, RB, DOT, EXCLAMATION_MARK, PLUS, MINUS, MULT,
-					DIVIDE, REMINDER, SMALLER_OP, LARGER_OP, SMALLER_EQ_OP, LARGER_EQ_OP,
-					EQUALS_OP, NOT_EQUALS_OP, AND_OP, OR_OP, ASSIGN;
-
-
-// Context terminals
-terminal UMINUS;
+/* Terminals */
+terminal 			LP, RP, LB, RB, LCBR, RCBR;
+terminal			GT, LT, GTE, LTE, LAND, LOR, EQUAL, NEQUAL, LNEG;
+terminal			PLUS, MINUS, MULTIPLY, DIVIDE, MOD;
+terminal			INT, BOOLEAN, STRING, TRUE, FALSE;
+terminal			THIS, EXTENDS, STATIC, VOID, RETURN, IF, ELSE, WHILE, BREAK, CONTINUE, NEW, LENGTH, CLASS, NULL;
+terminal			COMMA, DOT, SEMI, ASSIGN;
+terminal Integer	INTEGER;
+terminal String		QUOTE, ID, CLASS_ID;
+terminal 			UMINUS;
 
 /* Non terminals */
-non terminal Program 		  program;
-non terminal List<ICClass> 	  icClass_list;
-non terminal ICClass 		  icClass;
-non terminal ICClassBody 	  class_body;
-non terminal List<Field> 	  fields;
-non terminal List<String> 	  extra_fields;
-non terminal Method 		  method;
-non terminal List<Formal> 	  formal_list, extra_formals;
-non terminal Formal 		  formal;
-non terminal Type 			  type;
-non terminal List<Stmt> 	  stmt_list; 
-non terminal Stmt 			  stmt, elseStmt;
-non terminal Expr 			  expr, binaryOp, unaryOp;
-non terminal CallExpr 		  call;
-non terminal StaticCallExpr   staticCall;
-non terminal VirtualCallExpr  virtualCall;
-non terminal List<Expr> 	  arguments, extra_arguments;
-non terminal LocationExpr 	  location;
-non terminal LiteralExpr 	  literal;
+non terminal Program 		 program;
+non terminal List<ICClass>	 class_list;
+non terminal ICClass 		 class;
+non terminal ICClassBody 	 class_body;
+non terminal List<Field> 	 field_list;
+non terminal List<String>    id_list;
+non terminal Method 		 method, static_method, virtual_method;
+non terminal List<Formal> 	 formal_list, extra_formals;
+non terminal Formal 		 formal;
+non terminal Type 			 type; 
+non terminal Stmt 			 stmt;
+non terminal ReturnStmt 	 return_stmt;
+non terminal IfStmt 		 if_stmt;
+non terminal List<Stmt> 	 stmt_list;
+non terminal LocalVarStmt 	 local_var_stmt;
+non terminal Expr 			 expr;
+non terminal CallExpr 	     call, static_call, virtual_call;
+non terminal List<Expr> 	 argument_list;
+non terminal LocationExpr 	 location;
+non terminal BinaryOpExpr 	 binary_op_expr;
+non terminal UnaryOpExpr 	 unary_op_expr;
+non terminal LiteralExpr 	 literal;
 
 /* Precedences */
-/*precedence left formal, fields, stmt;
-precedence left method_type;*/
-precedence left ELSE_KEYWORD;
 precedence right ASSIGN;
-precedence left OR_OP;
-precedence left AND_OP;
-precedence left EQUALS_OP, NOT_EQUALS_OP;
-precedence left SMALLER_OP, LARGER_OP, SMALLER_EQ_OP, LARGER_EQ_OP;
+precedence left ID;
+precedence left LOR;
+precedence left LAND;
+precedence left EQUAL, NEQUAL;
+precedence left LT, LTE, GT, GTE;
 precedence left PLUS, MINUS;
-precedence left MULT, DIVIDE, REMINDER; 
-precedence right UMINUS, EXCLAMATION_MARK;
-/*precedence left ID; */
-precedence left LC, DOT, LP, LB;
+precedence left DIVIDE, MULTIPLY, MOD;
+precedence left UMINUS, LNEG;
+precedence left LB, RB, LP, RP, DOT;
+precedence left IF, ELSE;
 
 /* The grammar */
-program ::= icClass_list:icCl
-			{: RESULT = new Program(icCl); :}
+
+start with program;
+
+// Classes 
+program ::= class_list:cl
+	{: RESULT = new Program(cl); :} 
+	| error
+;
+class_list ::= // empty
+	{: RESULT = new ArrayList<ICClass>(); :}
+	| class_list:cl class:c
+	{: cl.add(c); RESULT = cl; :}
+;
+class ::= CLASS CLASS_ID:cid LCBR class_body:cb RCBR
+	{: RESULT = new ICClass(cidleft, cid, cb.getFields(), cb.getMethods()); :}
+	| CLASS CLASS_ID:cid EXTENDS CLASS_ID:scid LCBR class_body:cb RCBR
+	{: RESULT = new ICClass(cidleft, cid, scid, cb.getFields(), cb.getMethods()); :}
+;
+class_body ::= // empty
+	{: RESULT = new ICClassBody(); :}
+	| class_body:cb field_list:fl
+	{: cb.addFields(fl); RESULT = cb; :}
+	| class_body:cb method:m
+	{: cb.addMethod(m); RESULT = cb; :}
+;	
+
+// Field Declarations 
+field_list ::= type:t id_list:idl SEMI
+	{: List<Field> fieldList = new ArrayList<Field>();
+	   for (String id: idl) {
+	   		fieldList.add(new Field(t, id));
+       } 
+       RESULT = fieldList;
+	:}
+	| error SEMI
+;
+id_list ::= ID:id
+    {: List<String> idList = new ArrayList<String>();
+        idList.add(id);
+        RESULT = idList;
+	:}
+    | id_list:idl COMMA ID:id
+    {: idl.add(id); RESULT = idl; :} 
+;
+	
+// Method Declarations 
+method ::= static_method:sm
+	{: RESULT = sm; :}
+	| virtual_method:vm
+	{: RESULT = vm; :}
+	| error
+;
+static_method ::= STATIC type:t ID:id LP formal_list:fl RP  LCBR stmt_list:sl RCBR
+	{: RESULT = new StaticMethod(t, id, fl, sl); :}
+	| STATIC VOID ID:id LP formal_list:fl RP  LCBR stmt_list:sl RCBR
+	{: RESULT = new StaticMethod(new PrimitiveType(idleft, DataTypes.VOID), id, fl, sl); :}
+;
+virtual_method ::= type:t ID:id LP formal_list:fl RP  LCBR stmt_list:sl RCBR
+	{: RESULT = new VirtualMethod(t, id, fl, sl); :}
+	| VOID:v ID:id LP formal_list:fl RP  LCBR stmt_list:sl RCBR
+	{: RESULT = new VirtualMethod(new PrimitiveType(idleft, DataTypes.VOID), id, fl, sl); :}							  
+;
+formal_list	::= // empty
+	{: RESULT = new ArrayList<Formal>(); :}
+	| formal:f extra_formals:ef
+	{: ef.add(0,f); RESULT = ef; :}
+;
+extra_formals ::= // empty
+	{: RESULT = new ArrayList<Formal>(); :}
+	|	COMMA formal:f extra_formals:ef
+	{: ef.add(0,f); RESULT = ef; :}
+;								
+formal ::= type:t ID:id
+	{: RESULT = new Formal(t, id); :}
+;
+type ::= INT:i
+	{: RESULT = new PrimitiveType(ileft, DataTypes.INT); :} 
+	| BOOLEAN:b
+	{: RESULT = new PrimitiveType(bleft, DataTypes.BOOLEAN); :}
+	| STRING:s
+	{: RESULT = new PrimitiveType(sleft, DataTypes.STRING); :}
+	| CLASS_ID:cid
+	{: RESULT = new UserType(cidleft, cid); :}
+	| type:t LB RB
+	{: t.incrementDimension(); RESULT = t; :}
+;
+							  
+// Statements 
+stmt_list ::= // empty
+	{: RESULT = new ArrayList<Stmt>(); :}
+	| stmt_list:sl stmt:s
+	{: sl.add(s); RESULT = sl; :}
+	| stmt_list:sl error
+;
+stmt ::= location:l ASSIGN expr:e SEMI
+	{: RESULT = new AssignStmt(l, e); :}
+	| call:c SEMI
+	{: RESULT = new CallStmt(c); :}
+	| return_stmt:rs
+	{: RESULT = rs; :}
+	| if_stmt:is
+	{: RESULT = is; :}
+	| WHILE LP expr:e RP stmt:s
+	{: RESULT = new WhileStmt(e, s); :}
+	| BREAK:b SEMI
+	{: RESULT = new BreakStmt(bleft); :}
+	| CONTINUE:c SEMI
+	{: RESULT = new ContinueStmt(cleft); :}
+	| LCBR stmt_list:sl RCBR
+	{: RESULT = new StmtBlock(slleft, sl); :}
+	| local_var_stmt:lvs
+	{: RESULT = lvs; :}
+;
+return_stmt	::= RETURN:r SEMI
+	{: RESULT = new ReturnStmt(rleft); :}
+	| RETURN:r expr:e SEMI
+	{: RESULT = new ReturnStmt(rleft, e); :}
+;
+if_stmt ::= IF LP expr:e RP stmt:s
+	{: RESULT = new IfStmt(e, s); :}
+	| IF LP expr:e RP stmt:s ELSE stmt:es
+	{: RESULT = new IfStmt(e, s, es); :}
+;
+local_var_stmt ::= type:t ID:id SEMI
+	{: RESULT = new LocalVarStmt(t, id); :}
+	| type:t ID:id ASSIGN expr:e SEMI
+	{: RESULT = new LocalVarStmt(t, id, e); :}
 ;
 
-icClass_list ::= icClass_list:icCl icClass:icC
-				 {: icCl.add(icC); RESULT = icCl; :}
-  				 |
-  				 {: RESULT = new ArrayList<ICClass>(); :}
+// Expressions 
+expr ::= location:l
+	{: RESULT = l; :}
+	| call:c
+	{: RESULT = c; :} 
+	| THIS:t
+	{: RESULT = new ThisExpr(tleft); :}
+	| NEW CLASS_ID:cid LP RP
+	{: RESULT = new NewClassExpr(cidleft, cid); :}
+	| NEW type:t LB expr:e RB
+	{: t.incrementDimension(); RESULT = new NewArrayExpr(t, e); :}
+	| expr:e DOT LENGTH
+	{: RESULT = new LengthExpr(e); :}
+	| binary_op_expr:boe
+	{: RESULT = boe; :}
+	| unary_op_expr:uoe
+	{: RESULT = uoe; :}
+	| literal:l
+	{: RESULT = l; :}
+	| LP expr:e RP
+	{: RESULT = new ExprBlock(e); :}
+;						  
+call ::= static_call:sc
+	{: RESULT = sc; :}
+	| virtual_call:vc
+	{: RESULT = vc; :}
+;
+static_call ::= CLASS_ID:cid DOT ID:id LP argument_list:al RP
+	{: RESULT = new StaticCallExpr(cidleft, cid, id, al); :}
+;
+virtual_call ::= ID:id LP argument_list:al RP	
+	{: RESULT = new VirtualCallExpr(idleft, id, al); :}
+	| expr:e DOT ID:id LP argument_list:al RP	
+	{: RESULT = new VirtualCallExpr(e.getLine(), e, id, al); :}
+;
+argument_list ::= // empty
+	{: RESULT = new ArrayList<Expr>(); :}
+	| expr:e
+	{: RESULT = new ArrayList<Expr>();
+	   RESULT.add(e);
+	:}
+	| argument_list:al COMMA expr:e
+	{: al.add(e); RESULT = al; :}
+;
+location ::= ID:id
+	{: RESULT = new VarLocationExpr(idleft, id); :} 
+	| expr:e DOT ID:id
+	{: RESULT = new VarLocationExpr(eleft, e, id); :}
+	| expr:ae LB expr:ie RB
+	{: RESULT = new ArrayLocationExpr(ae, ie); :} 
+;							  
+binary_op_expr ::= expr:e1 PLUS expr:e2
+	{: RESULT = new MathBinaryOpExpr(e1, e2, BinaryOps.PLUS); :}
+	| expr:e1 MINUS expr:e2
+	{: RESULT = new MathBinaryOpExpr(e1, e2, BinaryOps.MINUS); :}
+	| expr:e1 MULTIPLY expr:e2
+	{: RESULT = new MathBinaryOpExpr(e1, e2, BinaryOps.MULTIPLY); :}
+	| expr:e1 DIVIDE expr:e2
+	{: RESULT = new MathBinaryOpExpr(e1, e2, BinaryOps.DIVIDE); :}
+	| expr:e1 MOD expr:e2
+	{: RESULT = new MathBinaryOpExpr(e1, e2, BinaryOps.MOD); :}
+	| expr:e1 LAND expr:e2
+	{: RESULT = new LogicalBinaryOpExpr(e1, e2, BinaryOps.LAND); :}
+	| expr:e1 LOR expr:e2
+	{: RESULT = new LogicalBinaryOpExpr(e1, e2, BinaryOps.LOR); :}
+	| expr:e1 LT expr:e2
+	{: RESULT = new LogicalBinaryOpExpr(e1, e2, BinaryOps.LT); :}
+	| expr:e1 LTE expr:e2
+	{: RESULT = new LogicalBinaryOpExpr(e1, e2, BinaryOps.LTE); :}
+	| expr:e1 GT expr:e2
+	{: RESULT = new LogicalBinaryOpExpr(e1, e2, BinaryOps.GT); :}
+	| expr:e1 GTE expr:e2
+	{: RESULT = new LogicalBinaryOpExpr(e1, e2, BinaryOps.GTE); :}
+	| expr:e1 EQUAL expr:e2
+	{: RESULT = new LogicalBinaryOpExpr(e1, e2, BinaryOps.EQUAL); :}
+	| expr:e1 NEQUAL expr:e2
+	{: RESULT = new LogicalBinaryOpExpr(e1, e2, BinaryOps.NEQUAL); :}
+;	
+unary_op_expr ::= MINUS expr:e
+	{: RESULT = new MathUnaryOpExpr(UnaryOps.UMINUS, e); :} %prec UMINUS
+	| LNEG expr:e
+	{: RESULT = new LogicalUnaryOpExpr(UnaryOps.LNEG, e); :}
+	| MINUS error
+	| LNEG error
 ;
 
-icClass ::= CLASS_KEYWORD:class_key CLASS_ID:cName EXTENDS_KEYWORD CLASS_ID:superCName LB class_body:clines RB
-			{: RESULT = new ICClass(class_keyleft, cName.toString(), 
-									superCName.toString(), clines.fields, clines.methods); :} 
-			| CLASS_KEYWORD:class_key CLASS_ID:cName LB class_body:clines RB
-			{: RESULT = new ICClass(class_keyleft, cName.toString(), 
-									null, clines.fields, clines.methods); :}
-;				
-
-
-class_body ::= class_body:clines method:m
-					{: clines.methods.add(m); RESULT = clines; :}
-					| class_body:clines fields:fl
-					{: clines.fields.addAll(fl); RESULT = clines; :}
-					| 
-					{: RESULT = new ICClassBody(); :}
-;
-
-fields ::=  type:t ID:fName extra_fields:fNamesl
-			{: 
-				fNamesl.add(0, fName.toString());
-				List<Field> fields_list = new ArrayList<Field>();
-				for (int i = 0; i < fNamesl.size(); i++)
-					fields_list.add(new Field(t, fNamesl.get(i))); 
-				RESULT = fields_list; 
-			:}
-;
-
-extra_fields ::= COMMA ID:fName extra_fields:fNamesl
-				 {: 
-				 	fNamesl.add(0, fName.toString());
-				 	RESULT = fNamesl;
-				 :}
- 				| SEMICOLON
- 				{: RESULT = new ArrayList<String>(); :}
-;
-
-method ::= STATIC_KEYWORD type:t ID:mName LP formal_list:fl RP LB stmt_list:sl RB 
-			{: RESULT = new StaticMethod(t, mName.toString(), fl, sl); :}
-			| STATIC_KEYWORD VOID_KEYWORD:v ID:mName LP formal_list:fl RP LB stmt_list:sl RB 
-			{: RESULT = new StaticMethod(new PrimitiveType(vleft, ic.DataTypes.VOID), mName.toString(), fl, sl); :}
-			| type:t ID:mName LP formal_list:fl RP LB stmt_list:sl RB
-			{: RESULT = new VirtualMethod(t, mName.toString(), fl, sl); :}
-			| VOID_KEYWORD:v ID:mName LP formal_list:fl RP LB stmt_list:sl RB
-			{: RESULT = new VirtualMethod(new PrimitiveType(vleft, ic.DataTypes.VOID), mName.toString(), fl, sl); :}
-; 
-
-formal_list ::= formal:f extra_formals:ef 
-				{: ef.add(0, f); RESULT = ef; :} 
-				| 
-				{: RESULT = new ArrayList<Formal>(); :}
-;
-
-extra_formals ::= COMMA formal:f extra_formals:ef
-				 {: ef.add(0, f); RESULT = ef; :} 
-				 | 
-				 {: RESULT = new ArrayList<Formal>(); :}
-;
-
-formal ::= type:t ID:fName
-		{: RESULT = new Formal(t, fName.toString()); :}
-;
-
-type ::= type:t LC RC
-		{: t.incrementDimension(); RESULT = t; :}
-		| INT_KEYWORD:intKey
-		{: RESULT = new PrimitiveType(intKeyleft, ic.DataTypes.INT); :}
-		| BOOLEAN_KEYWORD:boolKey
-		{: RESULT = new PrimitiveType(boolKeyleft, ic.DataTypes.BOOLEAN); :}
-		| STRING_KEYWORD:strKey
-		{: RESULT = new PrimitiveType(strKeyleft, ic.DataTypes.STRING); :}
-		| CLASS_ID:c
-		{: RESULT = new UserType(cleft, c.toString()); :}
-;
-			
-stmt_list ::= stmt_list:sl stmt:s
-	 	{: sl.add(s); RESULT = sl; :}
-		| 
-		{: RESULT = new ArrayList<Stmt>(); :}
-; 
-
-stmt ::= 	location:l ASSIGN expr:exp SEMICOLON 
-			{: RESULT = new AssignStmt(l, exp); :} |
-			call:c SEMICOLON
-			{: RESULT = new CallStmt(c); :} |
-			RETURN_KEYWORD:ret_key SEMICOLON
-			{: RESULT = new ReturnStmt(ret_keyleft, null); :} |
-			RETURN_KEYWORD:ret_key expr:exp SEMICOLON
-			{: RESULT = new ReturnStmt(ret_keyleft, exp); :} |
-			IF_KEYWORD LP expr:condExp RP stmt:doStmn elseStmt:eStmn
-			{: RESULT = new IfStmt(condExp, doStmn, eStmn); :} |
-			WHILE_KEYWORD LP expr:condExp RP stmt:doStmn 
-			{: RESULT = new WhileStmt(condExp, doStmn); :} |
-			BREAK_KEYWORD:break_key SEMICOLON
-			{: RESULT = new BreakStmt(break_keyleft); :} |
-			CONTINUE_KEYWORD:continue_key SEMICOLON
-			{: RESULT = new ContinueStmt(continue_keyleft); :} |
-			LB:lb stmt_list:sl RB 
-			{: RESULT = new StmtBlock(lbleft, sl); :} |
-			type:t ID:vName ASSIGN expr:exp SEMICOLON
-			{: RESULT = new LocalVarStmt(t, vName.toString(), exp); :} |
-			type:t ID:vName SEMICOLON
-			{: RESULT = new LocalVarStmt(t, vName.toString(), null); :}
-;
-
-elseStmt ::= ELSE_KEYWORD stmt:s {: RESULT = s; :} | {: RESULT = null; :} ;
-			
-expr ::=	THIS_KEYWORD:ths_key
-			{: RESULT = new ThisExpr(ths_keyleft); :} |
-			NEW_KEYWORD:n_key CLASS_ID:c LP RP
-			{: RESULT = new NewClassExpr(n_keyleft, c.toString()); :} |
-			NEW_KEYWORD type:t LC expr:exp RC
-			{: t.incrementDimension(); RESULT = new NewArrayExpr(t, exp); :} |
-			expr:exp DOT LENGTH_KEYWORD
-			{: RESULT = new LengthExpr(exp); :} | 
-			binaryOp:exp {: RESULT = exp; :} | 
-			unaryOp:exp {: RESULT = exp; :} | 
-			literal:l {: RESULT = l; :} | LP expr:exp RP {: RESULT = new ExprBlock(exp); :} |
-			location:l {: RESULT = l; :} | call:c {: RESULT = c; :}
-;
-
-binaryOp ::=	expr:exp1 PLUS expr:exp2
-				{: RESULT = new MathBinaryOpExpr(exp1, ic.BinaryOps.PLUS, exp2); :} |
-				expr:exp1 MINUS expr:exp2
-				{: RESULT = new MathBinaryOpExpr(exp1, ic.BinaryOps.MINUS, exp2); :} |
-				expr:exp1 MULT expr:exp2
-				{: RESULT = new MathBinaryOpExpr(exp1, ic.BinaryOps.MULTIPLY, exp2); :} |
-				expr:exp1 DIVIDE expr:exp2
-				{: RESULT = new MathBinaryOpExpr(exp1, ic.BinaryOps.DIVIDE, exp2); :} |
-				expr:exp1 REMINDER expr:exp2
-				{: RESULT = new MathBinaryOpExpr(exp1, ic.BinaryOps.MOD, exp2); :} |
-				expr:exp1 SMALLER_OP expr:exp2
-				{: RESULT = new LogicalBinaryOpExpr(exp1, ic.BinaryOps.LT, exp2); :} |	
-				expr:exp1 LARGER_OP expr:exp2
-				{: RESULT = new LogicalBinaryOpExpr(exp1, ic.BinaryOps.GT, exp2); :} |			
-				expr:exp1 SMALLER_EQ_OP expr:exp2
-				{: RESULT = new LogicalBinaryOpExpr(exp1, ic.BinaryOps.LTE, exp2); :} |		
-				expr:exp1 LARGER_EQ_OP expr:exp2
-				{: RESULT = new LogicalBinaryOpExpr(exp1, ic.BinaryOps.GTE, exp2); :} |	
-				expr:exp1 EQUALS_OP expr:exp2
-				{: RESULT = new LogicalBinaryOpExpr(exp1, ic.BinaryOps.EQUAL, exp2); :}	|		
-				expr:exp1 NOT_EQUALS_OP expr:exp2
-				{: RESULT = new LogicalBinaryOpExpr(exp1, ic.BinaryOps.NEQUAL, exp2); :} |		
-				expr:exp1 AND_OP expr:exp2
-				{: RESULT = new LogicalBinaryOpExpr(exp1, ic.BinaryOps.LAND, exp2); :} |	
-				expr:exp1 OR_OP expr:exp2
-				{: RESULT = new LogicalBinaryOpExpr(exp1, ic.BinaryOps.LOR, exp2); :}
-;
-
-unaryOp ::= EXCLAMATION_MARK expr:exp {: RESULT = new LogicalUnaryOpExpr(ic.UnaryOps.LNEG, exp); :} |
-			MINUS expr:exp {: RESULT = new MathUnaryOpExpr(ic.UnaryOps.UMINUS, exp); :} %prec UMINUS
-;
-
-call ::=	staticCall:sc {: RESULT = sc; :} | virtualCall:vc {: RESULT = vc; :};
-
-staticCall ::= 	CLASS_ID:c DOT ID:m LP arguments:args RP
-				{: RESULT = new StaticCallExpr(cleft, c.toString(), m.toString(), args); :}
-;
-
-virtualCall ::= expr:exp DOT ID:m LP arguments:args RP
-				{: RESULT = new VirtualCallExpr(exp.getLine(), exp, m.toString(), args); :} | 
-				ID:m LP arguments:args RP
-				{: RESULT = new VirtualCallExpr(mleft, null, m.toString(), args); :}
-;
-
-arguments ::=	expr:exp extra_arguments:eArgs 
-				{: eArgs.add(0, exp); RESULT = eArgs; :}	
-				| 
-				{: RESULT = new ArrayList<Expr>(); :}				
-;
-
-extra_arguments ::= COMMA expr:exp extra_arguments:eArgs
-				{: eArgs.add(0, exp); RESULT = eArgs; :}	
-				| 
-				{: RESULT = new ArrayList<Expr>(); :}				
-;
-
-location ::= ID:vName
-			 {: RESULT = new VarLocationExpr(vNameleft, vName.toString()); :} |
-			 expr:exp DOT ID:vName
-			 {: RESULT = new VarLocationExpr(vNameleft, exp, vName.toString()); :} | 
-			 expr:exp LC expr:ind_exp RC
-			 {: RESULT = new ArrayLocationExpr(exp, ind_exp); :} 
-;
-
-literal ::= INTEGER_LITERAL:n
-			{: RESULT = new LiteralExpr(nleft, ic.LiteralTypes.INTEGER, n); :} |
-			STRING_LITERAL:s
-			{: RESULT = new LiteralExpr(sleft, ic.LiteralTypes.STRING, s); :} |
-			TRUE_LITERAL:t
-			{: RESULT = new LiteralExpr(tleft, ic.LiteralTypes.TRUE, t); :} |
-			FALSE_LITERAL:f
-			{: RESULT = new LiteralExpr(fleft, ic.LiteralTypes.FALSE, f); :} |
-			NULL_LITERAL:n
-			{: RESULT = new LiteralExpr(nleft, ic.LiteralTypes.NULL, n); :}
+literal ::= INTEGER:i
+	{: RESULT = new LiteralExpr(ileft, LiteralTypes.INTEGER, i.intValue()); :}
+	| QUOTE:q
+	{: RESULT = new LiteralExpr(qleft, LiteralTypes.STRING, q); :}
+	| TRUE:t
+	{: RESULT = new LiteralExpr(tleft, LiteralTypes.TRUE); :}
+	| FALSE:f
+	{: RESULT = new LiteralExpr(fleft, LiteralTypes.FALSE); :}
+	| NULL:n
+	{: RESULT = new LiteralExpr(nleft, LiteralTypes.NULL); :}
 ;

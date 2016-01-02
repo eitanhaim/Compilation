@@ -1,15 +1,16 @@
 package parser;
 
-import java_cup.runtime.*;
-
 %%
-%public
-%class LibLexer
-%type Token
-%unicode
 %cup
 %line
 %column
+%public
+%type Token
+%class LibLexer
+%unicode
+%scanerror LexicalError
+
+/* Declarations */
 %{
 
   private Token token(int type, Object value) {
@@ -88,11 +89,11 @@ DecIntegerLiteral = 0+ | [1-9][0-9]*
 
 
  /* error fallback */
-	[^]                              { throw new LexicalError(yytext(), yyline+1, yycolumn+1); }
+	[^]                              { throw new LexicalError(yytext(), yyline, yycolumn); }
 	
 <<EOF>> 	
 { 
 	if (yystate() == BCOMMENTS)
-		throw new LexicalError("Unexpected end of comment", yyline+1, yycolumn+1);
+		throw new LexicalError("Unexpected end of comment", yyline, yycolumn);
 	return token(sym.EOF, "EOF"); 
 }

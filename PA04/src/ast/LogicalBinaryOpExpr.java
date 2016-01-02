@@ -21,9 +21,9 @@ public class LogicalBinaryOpExpr extends BinaryOpExpr {
 	 * @param operand2
 	 *            The second operand.
 	 */
-	public LogicalBinaryOpExpr(Expr operand1, BinaryOps operator,
-			Expr operand2) {
-		super(operand1, operator, operand2);
+	public LogicalBinaryOpExpr(Expr operand1, Expr operand2, 
+			BinaryOps operator) {
+		super(operand1, operand2, operator);
 	}
 
 }

@@ -21,8 +21,8 @@ public class MathBinaryOpExpr extends BinaryOpExpr {
 	 * @param operand2
 	 *            The second operand.
 	 */
-	public MathBinaryOpExpr(Expr operand1, BinaryOps operator, Expr operand2) {
-		super(operand1, operator, operand2);
+	public MathBinaryOpExpr(Expr operand1, Expr operand2, BinaryOps operator) {
+		super(operand1, operand2, operator);
 	}
 
 }

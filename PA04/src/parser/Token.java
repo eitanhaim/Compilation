@@ -1,37 +1,56 @@
 package parser;
+
 import java_cup.runtime.Symbol;
 
+/** 
+ * Adds line number and name information to scanner symbols.
+ */
 public class Token extends Symbol {
-	private int id, line, column;
-	private Object value;
-	
-	public Token(int id, Object value, int line, int column) {
-		super(id, line, column, value);
-		this.id=id;
-		this.value=value;
-		this.line=line;
-		this.column = column;
-	}
-	
-	public int getId() {return id;};
-	public Object getValue() {return value;};
-	public int getLine() {return line;};
-	public int getColumn() {return column;};
+	private String name;
+	private int lineNumber;
+	private int columnNumber;
 
-	public String getTag() {
-		switch (sym) {
-		
-			case parser.sym.ID:
-				return "ID";
-			case parser.sym.CLASS_ID:
-				return "CLASS_ID";
-			case parser.sym.INTEGER_LITERAL:
-				return "INTEGER";
-			case parser.sym.STRING_LITERAL:
-				return "STRING";
-				
+	public Token(int id, Object value, int line, int column) {
+		this(id, null, value, line, column);
+	}
+
+	public Token(int id, String name, Object value, int line, int column) {
+		super(id, line + 1, column + 1, value);
+
+		this.name = name;
+		this.lineNumber = line + 1;
+		this.columnNumber = column + 1;
+	}
+
+	public int getId() {
+		return sym;
+	}
+
+	public String getName() {
+		return this.name;
+	}
+
+	public Object getValue() {
+		return value;
+	}
+
+	public int getLine() {
+		return this.lineNumber;
+	}
+
+	public int getColumn() {
+		return this.columnNumber;
+	}
+
+	public String toString() {
+		String val = "";
+
+		if (name != null) {
+			val = value + "\t" + name;
+		} else {
+			val = value + "\t" + value;
 		}
-		
-		return value.toString();
+
+		return val + "\t" + lineNumber + ":" + columnNumber;
 	}
 }
