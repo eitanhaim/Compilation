@@ -27,6 +27,7 @@ public class SymbolTableBuilder implements Visitor {
 	 * the method type which it returns value to.
 	 */
 	private type_table.Type currentMethodType; 
+	private SymbolKind currentMethodKind;
 	
 	private TypeTable typeTable;
 	private SemanticErrorThrower semanticErrorThrower; 
@@ -116,26 +117,26 @@ public class SymbolTableBuilder implements Visitor {
 		for (Field field : icClass.getFields()) {
 			nodeHandlingQueue.add(field);
 			type_table.Type fieldType = typeTable.getTypeFromASTTypeNode(field.getType());
-			if (!addEntryAndCheckDuplication(currentClassSymbolTable, 
-					new SymbolEntry(field.getName(), fieldType, SymbolKind.FIELD))) {
+			SymbolEntry fieldSymbolEntry = new SymbolEntry(field.getName(), fieldType, SymbolKind.FIELD);
+			if (!addEntryAndCheckDuplication(currentClassSymbolTable, fieldSymbolEntry)) {
 				this.semanticErrorThrower = new SemanticErrorThrower(
 						field.getLine(), "field " + field.getName() + " is declared more than once");
 				return false;
 			}
-			field.setEntryType(fieldType);
+			field.setSymbolEntry(fieldSymbolEntry);
 			field.setSymbolTable(currentClassSymbolTable);
 		}
 		
 		for (Method method : icClass.getMethods()) {
 			nodeHandlingQueue.add(method);
 			type_table.Type methodType = typeTable.getMethodType(method);
-			if (!addEntryAndCheckDuplication(currentClassSymbolTable, 
-					new SymbolEntry(method.getName(), methodType, getMethodKind(method)))) {
+			SymbolEntry methodSymbolEntry = new SymbolEntry(method.getName(), methodType, getMethodKind(method));
+			if (!addEntryAndCheckDuplication(currentClassSymbolTable, methodSymbolEntry)) {
 				this.semanticErrorThrower = new SemanticErrorThrower(
 						method.getLine(), "method " + method.getName() + " is declared more than once");
 				return false;
 			}
-			method.setEntryType(methodType);
+			method.setSymbolEntry(methodSymbolEntry);
 			method.setSymbolTable(currentClassSymbolTable);
 			SymbolTable currentMethodSymbolTable = new SymbolTable(method.getName(), SymbolTableType.METHOD);
 			currentMethodSymbolTable.setParentSymbolTable(currentClassSymbolTable);
@@ -168,13 +169,13 @@ public class SymbolTableBuilder implements Visitor {
 	@Override
 	public Object visit(Formal formal) {
 		type_table.Type formalType = typeTable.getTypeFromASTTypeNode(formal.getType());
-		if (!addEntryAndCheckDuplication(formal.getSymbolTable(), 
-				new SymbolEntry(formal.getName(), formalType, SymbolKind.FORMAL))) {
+		SymbolEntry formalSymbolEntry = new SymbolEntry(formal.getName(), formalType, SymbolKind.FORMAL);
+		if (!addEntryAndCheckDuplication(formal.getSymbolTable(), formalSymbolEntry)) {
 			this.semanticErrorThrower = new SemanticErrorThrower(
 					formal.getLine(), "formal " + formal.getName() + " is declared more than once");
 			return false;
 		}
-		formal.setEntryType(formalType);
+		formal.setSymbolEntry(formalSymbolEntry);
 		return true;
 	}
 
@@ -286,8 +287,8 @@ public class SymbolTableBuilder implements Visitor {
 		}
 		
 		type_table.Type localVarType = typeTable.getTypeFromASTTypeNode(localVariable.getType());
-		if (!addEntryAndCheckDuplication(localVariable.getSymbolTable(), 
-				new SymbolEntry(localVariable.getName(), localVarType, SymbolKind.VARIABLE))) {
+		SymbolEntry localVarSymbolEntry = new SymbolEntry(localVariable.getName(), localVarType, SymbolKind.VARIABLE);
+		if (!addEntryAndCheckDuplication(localVariable.getSymbolTable(), localVarSymbolEntry)) {
 			this.semanticErrorThrower = new SemanticErrorThrower(localVariable.getLine(),
 					"variable " + localVariable.getName() + " is initialized more than once");
 			
@@ -319,10 +320,10 @@ public class SymbolTableBuilder implements Visitor {
 						"variable " + location.getName() + " is not initialized");
 				return false;
 			}
-			if (varEntry.getType().isClassType()) 
-				this.currentClassSymbolTablePoint = this.rootSymbolTable.findChildSymbolTable(varEntry.getType().toString());	
 		}
-		location.setEntryType(varEntry.getType());;
+		location.setSymbolEntry(varEntry);
+		if (varEntry.getType().isClassType()) 
+			this.currentClassSymbolTablePoint = this.rootSymbolTable.findChildSymbolTable(varEntry.getType().toString());	
 		return true;
 	}
 
@@ -347,7 +348,7 @@ public class SymbolTableBuilder implements Visitor {
 					"the class " + call.getClassName() + " dosen't exist");
 			return false;
 		}
-		SymbolEntry methodEntry = getMethodSymbolEntryFromExternalCall(call.getName(), SymbolKind.STATIC_METHOD, clsSymbolTable);
+		SymbolEntry methodEntry = getMethodSymbolEntry(call.getName(), SymbolKind.STATIC_METHOD, clsSymbolTable, false);
 		if(methodEntry == null) {
 			this.semanticErrorThrower = new SemanticErrorThrower(call.getLine(),
 					"the method " + call.getName() + " dosen't exist");
@@ -370,11 +371,14 @@ public class SymbolTableBuilder implements Visitor {
 			call.getLocation().setSymbolTable(call.getSymbolTable());
 			if (!(Boolean)call.getLocation().accept(this))
 				return false;
-			methodEntry = getMethodSymbolEntryFromExternalCall(call.getName(), SymbolKind.VIRTUAL_METHOD, this.currentClassSymbolTablePoint);
+			methodEntry = getMethodSymbolEntry(call.getName(), SymbolKind.VIRTUAL_METHOD, this.currentClassSymbolTablePoint, false);
 		}
-		else 
-			methodEntry = getMethodSymbolEntryFromInternalCall(call.getName(), call.getSymbolTable());
-
+		else {
+			if (currentMethodKind == SymbolKind.STATIC_METHOD)
+				methodEntry = getMethodSymbolEntry(call.getName(), currentMethodKind, call.getSymbolTable(), false);
+			else
+				methodEntry = getMethodSymbolEntry(call.getName(), null, call.getSymbolTable(), true);
+		}
 		if(methodEntry == null) {
 			this.semanticErrorThrower = new SemanticErrorThrower(call.getLine(),
 					"the method " + call.getName() + " dosen't exist");
@@ -499,6 +503,7 @@ public class SymbolTableBuilder implements Visitor {
 		SymbolTable currentMethodSymbolTable = method.getSymbolTable().findChildSymbolTable(
 				method.getName());
 		this.currentMethodType = method.getEntryType();
+		this.currentMethodKind = method.getSymbolTable().getEntry(method.getName()).getKind();
 		for (Formal formal : method.getFormals()) {
 			formal.setSymbolTable(currentMethodSymbolTable);
 			if (!(Boolean)formal.accept(this))
@@ -542,6 +547,7 @@ public class SymbolTableBuilder implements Visitor {
 					else
 						break;
 				}
+				scanningTable = scanningTable.getParentSymbolTable();
 			}
 		}
 		table.addEntry(entry.getId(), entry);
@@ -574,7 +580,7 @@ public class SymbolTableBuilder implements Visitor {
 		if ((bottomSymbolTable.getTableType() == SymbolTableType.METHOD) || 
 				(bottomSymbolTable.getTableType() == SymbolTableType.STATEMENT_BLOCK)) {
 			// climb the symbol table tree up to the symbol table of the method from which contains the variable.
-			while (bottomSymbolTable.getTableType().equals(SymbolTableType.STATEMENT_BLOCK)) {
+			while (bottomSymbolTable.getId().contains("block#")) {
 				if (bottomSymbolTable.hasEntry(name))
 					return bottomSymbolTable.getEntry(name);
 				bottomSymbolTable = bottomSymbolTable.getParentSymbolTable();
@@ -606,58 +612,25 @@ public class SymbolTableBuilder implements Visitor {
 
 		return null;
 	}
-	
+		
 	/**
-	 * Searches for a method symbol entry from a static call or from a virtual call with external scope.
+	 * Searches for a method symbol entry.
 	 * 
 	 * @param name		  			  Name of symbol entry to look for.
 	 * @param methodKind  			  The method kind.
 	 * @param bottomClassSymbolTable  The methods assume it has a CLASS symbol table type.
+	 * @param ignoreMethodKind		  Flag indicating whether to ignore the method kind.
 	 * @return						  The method symbol.
 	 */
-	private SymbolEntry getMethodSymbolEntryFromExternalCall(
-			String name, SymbolKind methodKind, SymbolTable bottomClassSymbolTable) {
+	private SymbolEntry getMethodSymbolEntry(String name, 
+			SymbolKind methodKind, SymbolTable bottomClassSymbolTable, Boolean ignoreMethodKind) {
 		while (bottomClassSymbolTable != null) {
-			if (bottomClassSymbolTable.hasEntry(name))
-				if (bottomClassSymbolTable.getEntry(name).getKind() == methodKind) // An external method mast be consistent with the call type.
-					return bottomClassSymbolTable.getEntry(name);
-			bottomClassSymbolTable = bottomClassSymbolTable.getParentSymbolTable();
-		}
-		return null;
-	}
-	
-	/**
-	 * Searches for a method symbol entry from a virtual call without external scope.
-	 * - If the call was executed from a virtual method then a method entry with the same name and with any method kind (virtual or static) is a legal entry.
-	 * - If the call was executed from a static method then only a method entry of kind static method with the same name is a legal entry.
-	 * 
-	 * @param name				 Name of symbol entry to look for.
-	 * @param bottomSymbolTable  The methods assume it has a METHOD or a STATEMENT_BLCOK symbol table type.
-	 * @return					 The method symbol.
-	 */
-	private SymbolEntry getMethodSymbolEntryFromInternalCall(
-			String name, SymbolTable bottomSymbolTable) {
-		// climb the symbol table tree up to the symbol table of the method from which the call was executed.
-		while (bottomSymbolTable.getTableType().equals(SymbolTableType.STATEMENT_BLOCK)) 
-			bottomSymbolTable = bottomSymbolTable.getParentSymbolTable();
-		
-		// identify kind of the method from which the call was executed (static or virtual).
-		SymbolKind scopeMethodKind = bottomSymbolTable.getParentSymbolTable().
-				getEntry(bottomSymbolTable.getId()).getKind();
-		SymbolTable bottomClassSymbolTable = bottomSymbolTable = bottomSymbolTable.getParentSymbolTable();
-		while (bottomClassSymbolTable.getTableType() != SymbolTableType.GLOBAL) {
 			if (bottomClassSymbolTable.hasEntry(name)) {
-				if (bottomClassSymbolTable.getEntry(name).getKind().isMethodKind()) { //found a method with same name
-					if (scopeMethodKind == SymbolKind.VIRTUAL_METHOD) // from a virtual method the call can be to both static and virtual methods.
-						return bottomClassSymbolTable.getEntry(name);
-					if (scopeMethodKind == SymbolKind.STATIC_METHOD) { // from a static method the call must be to a static method.
-						if (bottomClassSymbolTable.getEntry(name).getKind() == SymbolKind.STATIC_METHOD)
-							return bottomClassSymbolTable.getEntry(name);
-						else
-							return null; // call to a virtual method in a virtual call without external scope from a static call is illegal.
-					}
-				}
-					
+				SymbolEntry candidateEntry = bottomClassSymbolTable.getEntry(name);
+				Boolean existanceCondition = ignoreMethodKind ? candidateEntry.getKind().isMethodKind() :
+					candidateEntry.getKind() == methodKind;
+				if (existanceCondition)
+					return bottomClassSymbolTable.getEntry(name);
 			}
 			bottomClassSymbolTable = bottomClassSymbolTable.getParentSymbolTable();
 		}

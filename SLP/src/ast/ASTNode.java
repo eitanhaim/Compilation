@@ -9,6 +9,7 @@ public abstract class ASTNode {
 	private int line;
 	private SymbolTable symbolTable;
 	private type_table.Type entryType;
+	private symbol_table.SymbolEntry symbolEntry;
 	
 	/**
 	 * Constructs an AST node corresponding to a line number in the original code. Used by subclasses.
@@ -18,26 +19,35 @@ public abstract class ASTNode {
 	protected ASTNode(int line) {
 		this.symbolTable = null;
 		this.line = line;
+		this.symbolEntry = null;
 	}
 	
 	public int getLine() {
 		return line;
 	}
 	
-	public void setSymbolTable(SymbolTable table) {
-		this.symbolTable = table;
-	}
-
 	public SymbolTable getSymbolTable() {
 		return this.symbolTable;
 	}
 	
+	public void setSymbolTable(SymbolTable table) {
+		this.symbolTable = table;
+	}
+	
 	public type_table.Type getEntryType() {
-		return entryType;
+		return (this.symbolEntry == null) ? entryType : this.symbolEntry.getType();
 	}
 
 	public void setEntryType(type_table.Type entryType) {
 		this.entryType = entryType;
+	}
+	
+	public symbol_table.SymbolEntry getSymbolEntry() {
+		return symbolEntry;
+	}
+
+	public void setSymbolEntry(symbol_table.SymbolEntry symbolEntry) {
+		this.symbolEntry = symbolEntry;
 	}
 	
 	/**

@@ -51,6 +51,15 @@ public abstract class Type {
 	}
 	
 	/**
+	 * Checks if this type is an instance of MethodType.
+	 * 
+	 * @return  True if this type is an instance of MethodType, otherwise returns false.
+	 */
+	public boolean isMethodType() {
+		return (this instanceof MethodType);
+	}
+	
+	/**
 	 * Checks if this type is an instance of ArrayType.
 	 * 
 	 * @return  True if this type is an instance of ArrayType, otherwise returns false.
@@ -102,6 +111,13 @@ public abstract class Type {
 	 */
 	public boolean isNullType() {
 		return (this instanceof NullType);
+	}
+	
+	public Type getReturnType() {
+		if (!this.isMethodType())
+			return null;
+		MethodType thisMethodType = (MethodType)this;
+		return thisMethodType.getReturnType();
 	}
 	
 	/**

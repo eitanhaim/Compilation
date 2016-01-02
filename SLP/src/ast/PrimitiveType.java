@@ -31,4 +31,11 @@ public class PrimitiveType extends Type {
 	public Object accept(Visitor visitor) {
 		return visitor.visit(this);
 	}
+	
+	@Override
+	public Type clone() {
+		Type other = new PrimitiveType(getLine(), type);
+		other.setDimension(getDimension());
+		return other;
+	}
 }

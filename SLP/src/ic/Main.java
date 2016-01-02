@@ -2,7 +2,7 @@ package ic;
 
 import java.io.*;
 import java_cup.runtime.*;
-
+import lir.TranslationVisitor;
 import ast.*;
 import parser.*;
 import semantic_analysis.*;
@@ -34,11 +34,13 @@ public class Main {
 			ICClass libRoot = parseLibFile();
 			if (libRoot == null)
 				return;
+			System.out.println("Parsed " + libPath +" successfully!");
 			
 			// parse the IC file
 			Program icRoot = parseICFile();
 			if (icRoot == null)
 				return;
+			System.out.println("Parsed " + icPath +" successfully!");
 			
 			// make sure that the Library class has the correct name
 			if(!libRoot.getName().equals(LIB_NAME)) 
@@ -54,13 +56,23 @@ public class Main {
 
 			TypeValidator TypeValidator = new TypeValidator(typeTableBuilder.getBuiltTypeTable());
 			TypeValidator.validate(icRoot);
+			
+			// translate the IC file to LIR
+			TranslationVisitor trv = new TranslationVisitor();
+			trv.translate(icRoot);
+			
+			PrintWriter writer = new PrintWriter("output.lir");
+			writer.print(trv.printInstructions());
+			writer.close();
+			
+			System.out.println("Created LIR file successfully!");
             
             // pretty-print the AST to System.out, if requested
             if (printast && (icRoot != null))
             { 
             	PrettyPrinter printer = new PrettyPrinter(args[0], icRoot);
             	printer.print();
-            }
+            }            
 		} catch (SemanticError semanticError) {
             System.err.println("Semantic Error: " + semanticError.getMessage());
         } catch (Exception ex) {

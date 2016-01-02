@@ -5,13 +5,13 @@ import java.io.FileReader;
 import java.io.PrintWriter;
 
 import java_cup.runtime.Symbol;
+import lir.TranslationVisitor;
 import IC.AST.*;
 import IC.Parser.*;
 import IC.SemanticAnalysis.SemanticError;
 import IC.SemanticAnalysis.SemanticErrorThrower;
 import IC.SymbolsTable.*;
 import IC.Types.*;
-import IC.lir.TranslationVisitor;
 
 public class Compiler {
 

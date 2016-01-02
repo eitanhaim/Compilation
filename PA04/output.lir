@@ -1,7 +1,12 @@
-str0: "hello\tbye!"
-_DV_Test: [_ic_main]
+str0: "hello\n"
+_DV_Test: [_DV_Test_foo,_ic_main]
+_DV_Test_foo:
+Move 1,R1
+Return R1
 _ic_main:
-Move str0,R1
-Library __print(R1),Rdummy
+StaticCall _DV_Test_foo(),R1
+Move R1,var1_b
+Move str0,R2
+Move R2,var2_s
 _PROGRAM_END:
 Library __exit(0),Rdummy

@@ -9,6 +9,7 @@ public class SymbolEntry {
 	private String id;
 	private Type type;
 	private SymbolKind kind;
+	private String globalId;
 	  
 	/**
 	 * Constructs a new symbol entry.
@@ -33,6 +34,14 @@ public class SymbolEntry {
 	
 	public SymbolKind getKind() {
 		return kind;
+	}
+	
+	public String getGlobalId() {
+		return globalId;
+	}
+
+	public void setGlobalId(String globalId) {
+		this.globalId = globalId;
 	}
 	
 	@Override

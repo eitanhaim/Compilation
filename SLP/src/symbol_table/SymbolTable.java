@@ -23,6 +23,9 @@ public class SymbolTable {
 	  private List<SymbolEntry> sorted_entries; 
 	  private List<SymbolTable> sorted_children; 
 	  
+	  /** Counts the entry kinds **/
+	  private Map<SymbolKind, Integer> entryKindsCounter;
+	  
 	  /**
 	   * Constructs a new symbol table.
 	   * 
@@ -37,7 +40,19 @@ public class SymbolTable {
 	    children = new HashMap<String, SymbolTable>();
 	    sorted_entries = new ArrayList<SymbolEntry>();
 	    sorted_children = new ArrayList<SymbolTable>();
+	    entryKindsCounter = generateKindsCounter();
 	    parentSymbolTable = null;
+	  }
+	  
+	  private Map<SymbolKind, Integer> generateKindsCounter() {
+		  Map<SymbolKind, Integer> entryKindsCounter = new HashMap<SymbolKind, Integer>();
+		  entryKindsCounter.put(SymbolKind.CLASS, 0);
+		  entryKindsCounter.put(SymbolKind.FIELD, 0);
+		  entryKindsCounter.put(SymbolKind.FORMAL, 0);
+		  entryKindsCounter.put(SymbolKind.STATIC_METHOD, 0);
+		  entryKindsCounter.put(SymbolKind.VIRTUAL_METHOD, 0);
+		  entryKindsCounter.put(SymbolKind.VARIABLE, 0);
+		  return entryKindsCounter;
 	  }
 
 	  public String getId() {
@@ -80,6 +95,9 @@ public class SymbolTable {
 	   * @param entry  Symbol entry to add.
 	   */
 	  public void addEntry(String key, SymbolEntry entry) {
+		  this.entryKindsCounter.put(entry.getKind(), entryKindsCounter.get(entry.getKind()) + 1);
+		  entry.setGlobalId(entry.getKind().getShortRepr() + 
+				  entryKindsCounter.get(entry.getKind()).toString() + "_" + entry.getId());
 		  this.entries.put(key, entry);
 		  this.sorted_entries.add(entry);
 	  }
@@ -141,17 +159,18 @@ public class SymbolTable {
 	   * @return	  The child symbol table or null if not found,
 	   */
 	  private SymbolTable findChildSymbolTableRecursive(SymbolTable root, String id) {
+		   if (root.children.containsKey(id))
+			  return root.children.get(id);
+
 		  for (String tableID : root.children.keySet()) {
-			  if (id.equals(tableID))
-				  return root.children.get(id);
-			  else {
-				  SymbolTable result = findChildSymbolTableRecursive(
+			  SymbolTable result = findChildSymbolTableRecursive(
 						root.children.get(tableID), id);
 				  if (result != null)
 					  return result;
-			  }
 		  }
+
 		  return null;
+		  
 	  }
 	  
 	  /**
