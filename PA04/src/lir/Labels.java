@@ -3,7 +3,7 @@ package lir;
 import java.util.HashMap;
 import java.util.Map;
 
-import lir_instructions.Label;
+import lir.instructions.Label;
 
 public class Labels {
 	Map<String, Label> labels;

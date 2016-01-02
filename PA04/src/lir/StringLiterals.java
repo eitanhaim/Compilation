@@ -3,7 +3,7 @@ package lir;
 import java.util.ArrayList;
 import java.util.List;
 
-import lir_instructions.StringLiteral;
+import lir.instructions.StringLiteral;
 
 public class StringLiterals {
 	List<String> literals;

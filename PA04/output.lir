@@ -1,12 +1,486 @@
-str0: "hello\n"
-_DV_Test: [_DV_Test_foo,_ic_main]
-_DV_Test_foo:
+str0: "Runtime error: Null pointer dereference!"
+str1: "Runtime error: Array index out of bounds!"
+str2: "Runtime error: Array allocation with negative array size!"
+str3: "Array elements: "
+str4: " "
+str5: "hi\n"
+str6: "Invalid array length"
+_DV_Quicksort: [_DV_Quicksort_partition,_DV_Quicksort_quicksort,_DV_Quicksort_initArray,_DV_Quicksort_printArray,_ic_main]
+_DV_Quicksort_partition:
+Move this,R4
+MoveField R4.1,R4
+Move param1_low,R3
+Compare 0,R4
+JumpFalse _end_label1
+Move str0,R3
+Library __print(R3),Rdummy
+Jump _PROGRAM_END
+_end_label1:
+ArrayLength R4,R5
+Compare R3,R5
+JumpG _end_label2
+Move str1,R5
+Library __print(R5),Rdummy
+Jump _PROGRAM_END
+_end_label2:
+Compare 0,R3
+JumpGE _end_label3
+Move str2,R3
+Library __print(R3),Rdummy
+Jump _PROGRAM_END
+_end_label3:
+MoveArray R4[R3],R1
+Move R1,var1_pivot
+Move param1_low,R2
+Move R2,var2_i
+Move param2_high,R3
+Move R3,var3_j
+_test_label4:
+Move 1,R4
+Compare 1,R4
+JumpFalse _end_label4
+_test_label5:
+Move var1_pivot,R4
+Move this,R8
+MoveField R8.1,R8
+Move var2_i,R7
+Compare 0,R8
+JumpFalse _end_label7
+Move str0,R7
+Library __print(R7),Rdummy
+Jump _PROGRAM_END
+_end_label7:
+ArrayLength R8,R9
+Compare R7,R9
+JumpG _end_label8
+Move str1,R9
+Library __print(R9),Rdummy
+Jump _PROGRAM_END
+_end_label8:
+Compare 0,R7
+JumpGE _end_label9
+Move str2,R7
+Library __print(R7),Rdummy
+Jump _PROGRAM_END
+_end_label9:
+MoveArray R8[R7],R5
+Compare R4,R5
+JumpL _true_label6
+Move 0,R4
+Jump _end_label6
+_true_label6:
+Move 1,R4
+_end_label6:
+Compare 1,R4
+JumpFalse _end_label5
+Move var2_i,R5
+Move 1,R6
+Add R6,R5
+Move R5,var2_i
+Move var2_i,R4
+Jump _test_label5
+_end_label5:
+_test_label10:
+Move var1_pivot,R4
+Move this,R8
+MoveField R8.1,R8
+Move var3_j,R7
+Compare 0,R8
+JumpFalse _end_label12
+Move str0,R7
+Library __print(R7),Rdummy
+Jump _PROGRAM_END
+_end_label12:
+ArrayLength R8,R9
+Compare R7,R9
+JumpG _end_label13
+Move str1,R9
+Library __print(R9),Rdummy
+Jump _PROGRAM_END
+_end_label13:
+Compare 0,R7
+JumpGE _end_label14
+Move str2,R7
+Library __print(R7),Rdummy
+Jump _PROGRAM_END
+_end_label14:
+MoveArray R8[R7],R5
+Compare R4,R5
+JumpG _true_label11
+Move 0,R4
+Jump _end_label11
+_true_label11:
+Move 1,R4
+_end_label11:
+Compare 1,R4
+JumpFalse _end_label10
+Move var3_j,R5
+Move 1,R6
+Sub R6,R5
+Move R5,var3_j
+Move var3_j,R4
+Jump _test_label10
+_end_label10:
+Move var3_j,R4
+Move var2_i,R5
+Compare R4,R5
+JumpGE _true_label15
+Move 0,R4
+Jump _end_label15
+_true_label15:
+Move 1,R4
+_end_label15:
+Compare 1,R4
+JumpFalse _end_label16
+Jump _end_label4
+_end_label16:
+Move this,R8
+MoveField R8.1,R8
+Move var2_i,R7
+Compare 0,R8
+JumpFalse _end_label17
+Move str0,R7
+Library __print(R7),Rdummy
+Jump _PROGRAM_END
+_end_label17:
+ArrayLength R8,R9
+Compare R7,R9
+JumpG _end_label18
+Move str1,R9
+Library __print(R9),Rdummy
+Jump _PROGRAM_END
+_end_label18:
+Compare 0,R7
+JumpGE _end_label19
+Move str2,R7
+Library __print(R7),Rdummy
+Jump _PROGRAM_END
+_end_label19:
+MoveArray R8[R7],R5
+Move R5,var4_tmp
+Move var4_tmp,R4
+Move this,R8
+MoveField R8.1,R8
+Move var3_j,R7
+Compare 0,R8
+JumpFalse _end_label20
+Move str0,R7
+Library __print(R7),Rdummy
+Jump _PROGRAM_END
+_end_label20:
+ArrayLength R8,R9
+Compare R7,R9
+JumpG _end_label21
+Move str1,R9
+Library __print(R9),Rdummy
+Jump _PROGRAM_END
+_end_label21:
+Compare 0,R7
+JumpGE _end_label22
+Move str2,R7
+Library __print(R7),Rdummy
+Jump _PROGRAM_END
+_end_label22:
+MoveArray R8[R7],R5
+Move this,R7
+MoveField R7.1,R7
+Move var2_i,R6
+Compare 0,R7
+JumpFalse _end_label23
+Move str0,R6
+Library __print(R6),Rdummy
+Jump _PROGRAM_END
+_end_label23:
+ArrayLength R7,R8
+Compare R6,R8
+JumpG _end_label24
+Move str1,R8
+Library __print(R8),Rdummy
+Jump _PROGRAM_END
+_end_label24:
+Compare 0,R6
+JumpGE _end_label25
+Move str2,R6
+Library __print(R6),Rdummy
+Jump _PROGRAM_END
+_end_label25:
+MoveArray R5,R7[R6]
+MoveArray R7[R6],R4
+Move var4_tmp,R5
+Move this,R7
+MoveField R7.1,R7
+Move var3_j,R6
+Compare 0,R7
+JumpFalse _end_label26
+Move str0,R6
+Library __print(R6),Rdummy
+Jump _PROGRAM_END
+_end_label26:
+ArrayLength R7,R8
+Compare R6,R8
+JumpG _end_label27
+Move str1,R8
+Library __print(R8),Rdummy
+Jump _PROGRAM_END
+_end_label27:
+Compare 0,R6
+JumpGE _end_label28
+Move str2,R6
+Library __print(R6),Rdummy
+Jump _PROGRAM_END
+_end_label28:
+MoveArray R5,R7[R6]
+MoveArray R7[R6],R4
+Move var2_i,R5
+Move 1,R6
+Add R6,R5
+Move R5,var2_i
+Move var2_i,R4
+Move var3_j,R5
+Move 1,R6
+Sub R6,R5
+Move R5,var3_j
+Move var3_j,R4
+Jump _test_label4
+_end_label4:
+Move var3_j,R4
+Return R4
+_DV_Quicksort_quicksort:
+Move param3_my_arr,R2
+Compare 0,R2
+JumpFalse _end_label29
+Move str0,R1
+Library __print(R1),Rdummy
+Jump _PROGRAM_END
+_end_label29:
+ArrayLength R2,R1
+Library __printi(R1),Rdummy
+Move param2_high,R1
+Move param1_low,R2
+Compare R1,R2
+JumpL _true_label30
+Move 0,R1
+Jump _end_label30
+_true_label30:
 Move 1,R1
-Return R1
-_ic_main:
-StaticCall _DV_Test_foo(),R1
-Move R1,var1_b
+_end_label30:
+Compare 1,R1
+JumpFalse _end_label31
+Move this,R1
+Compare 0,R1
+JumpFalse _end_label32
+Move str0,R1
+Library __print(R1),Rdummy
+Jump _PROGRAM_END
+_end_label32:
+Move param1_low,R2
+Move param2_high,R3
+VirtualCall R1.0(param1_low=R2, param2_high=R3),R1
+Move R1,var1_mid
+Move this,R2
+Compare 0,R2
+JumpFalse _end_label33
 Move str0,R2
+Library __print(R2),Rdummy
+Jump _PROGRAM_END
+_end_label33:
+Move param1_low,R3
+Move var1_mid,R4
+Move param3_my_arr,R5
+VirtualCall R2.1(param1_low=R3, param2_high=R4, param3_my_arr=R5),Rdummy
+Move this,R2
+Compare 0,R2
+JumpFalse _end_label34
+Move str0,R2
+Library __print(R2),Rdummy
+Jump _PROGRAM_END
+_end_label34:
+Move var1_mid,R3
+Move 1,R4
+Add R4,R3
+Move param2_high,R4
+Move param3_my_arr,R5
+VirtualCall R2.1(param1_low=R3, param2_high=R4, param3_my_arr=R5),Rdummy
+_end_label31:
+Return Rdummy
+_DV_Quicksort_initArray:
+Move 0,R1
+Move R1,var1_i
+_test_label35:
+Move this,R3
+MoveField R3.1,R3
+Compare 0,R3
+JumpFalse _end_label37
+Move str0,R2
+Library __print(R2),Rdummy
+Jump _PROGRAM_END
+_end_label37:
+ArrayLength R3,R2
+Move var1_i,R3
+Compare R2,R3
+JumpL _true_label36
+Move 0,R2
+Jump _end_label36
+_true_label36:
+Move 1,R2
+_end_label36:
+Compare 1,R2
+JumpFalse _end_label35
+Move var1_i,R3
+Move 1,R4
+Add R4,R3
+Move R3,var1_i
+Move var1_i,R2
+Jump _test_label35
+_end_label35:
+Return Rdummy
+_DV_Quicksort_printArray:
+Move 0,R1
+Move R1,var1_i
+Move str3,R2
+Library __print(R2),Rdummy
+_test_label38:
+Move this,R3
+MoveField R3.1,R3
+Compare 0,R3
+JumpFalse _end_label40
+Move str0,R2
+Library __print(R2),Rdummy
+Jump _PROGRAM_END
+_end_label40:
+ArrayLength R3,R2
+Move var1_i,R3
+Compare R2,R3
+JumpL _true_label39
+Move 0,R2
+Jump _end_label39
+_true_label39:
+Move 1,R2
+_end_label39:
+Compare 1,R2
+JumpFalse _end_label38
+Move this,R5
+MoveField R5.1,R5
+Move var1_i,R4
+Compare 0,R5
+JumpFalse _end_label41
+Move str0,R4
+Library __print(R4),Rdummy
+Jump _PROGRAM_END
+_end_label41:
+ArrayLength R5,R6
+Compare R4,R6
+JumpG _end_label42
+Move str1,R6
+Library __print(R6),Rdummy
+Jump _PROGRAM_END
+_end_label42:
+Compare 0,R4
+JumpGE _end_label43
+Move str2,R4
+Library __print(R4),Rdummy
+Jump _PROGRAM_END
+_end_label43:
+MoveArray R5[R4],R2
+Library __printi(R2),Rdummy
+Move str4,R2
+Library __print(R2),Rdummy
+Move var1_i,R3
+Move 1,R4
+Add R4,R3
+Move R3,var1_i
+Move var1_i,R2
+Jump _test_label38
+_end_label38:
+Move str5,R2
+Library __print(R2),Rdummy
+Return Rdummy
+_ic_main:
+Move 1,R1
+Move R1,var1_n
+Move 0,R2
+Move var1_n,R3
+Compare R2,R3
+JumpLE _true_label44
+Move 0,R2
+Jump _end_label44
+_true_label44:
+Move 1,R2
+_end_label44:
+Compare 1,R2
+JumpFalse _end_label45
+Move str6,R2
+Library __println(R2),Rdummy
+Move 1,R2
+Library __exit(R2),Rdummy
+_end_label45:
+Library __allocateObject(8),R2
+MoveField _DV_Quicksort,R2.0
 Move R2,var2_s
+Move var1_n,R5
+Mul 4,R5
+Compare 0,R5
+JumpGE _end_label46
+Move str2,R4
+Library __print(R4),Rdummy
+Jump _PROGRAM_END
+_end_label46:
+Library __allocateArray(R5),R4
+Move var2_s,R3
+Compare 0,R3
+JumpFalse _end_label47
+Move str0,R3
+Library __print(R3),Rdummy
+Jump _PROGRAM_END
+_end_label47:
+MoveField R4,R3.1
+MoveField R3.1,R3
+Move var2_s,R3
+Compare 0,R3
+JumpFalse _end_label48
+Move str0,R3
+Library __print(R3),Rdummy
+Jump _PROGRAM_END
+_end_label48:
+VirtualCall R3.2(),Rdummy
+Move var2_s,R3
+Compare 0,R3
+JumpFalse _end_label49
+Move str0,R3
+Library __print(R3),Rdummy
+Jump _PROGRAM_END
+_end_label49:
+VirtualCall R3.3(),Rdummy
+Move 3,R4
+Mul 4,R4
+Compare 0,R4
+JumpGE _end_label50
+Move str2,R3
+Library __print(R3),Rdummy
+Jump _PROGRAM_END
+_end_label50:
+Library __allocateArray(R4),R3
+Move R3,var3_my_arr
+Move var2_s,R4
+Compare 0,R4
+JumpFalse _end_label51
+Move str0,R4
+Library __print(R4),Rdummy
+Jump _PROGRAM_END
+_end_label51:
+Move 0,R5
+Move var1_n,R6
+Move 1,R7
+Sub R7,R6
+Move var3_my_arr,R7
+VirtualCall R4.1(param1_low=R5, param2_high=R6, param3_my_arr=R7),Rdummy
+Move var2_s,R4
+Compare 0,R4
+JumpFalse _end_label52
+Move str0,R4
+Library __print(R4),Rdummy
+Jump _PROGRAM_END
+_end_label52:
+VirtualCall R4.3(),Rdummy
 _PROGRAM_END:
 Library __exit(0),Rdummy

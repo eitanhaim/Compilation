@@ -3,7 +3,7 @@ package lir;
 import java.util.HashMap;
 import java.util.Map;
 
-import lir_instructions.Reg;
+import lir.instructions.Reg;
 
 public class Registers {
 	Map<Integer, Reg> regs;

@@ -8,45 +8,45 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Stack;
 
-import IC.AST.ASTNode;
-import IC.AST.ArrayLocation;
-import IC.AST.Assignment;
-import IC.AST.Break;
-import IC.AST.CallStatement;
-import IC.AST.Continue;
-import IC.AST.Expression;
-import IC.AST.ExpressionBlock;
-import IC.AST.Field;
-import IC.AST.Formal;
-import IC.AST.ICClass;
-import IC.AST.If;
-import IC.AST.Length;
-import IC.AST.LibraryMethod;
-import IC.AST.Literal;
-import IC.AST.LocalVariable;
-import IC.AST.LogicalBinaryOp;
-import IC.AST.LogicalUnaryOp;
-import IC.AST.MathBinaryOp;
-import IC.AST.MathUnaryOp;
-import IC.AST.Method;
-import IC.AST.NewArray;
-import IC.AST.NewClass;
-import IC.AST.PrimitiveType;
-import IC.AST.Program;
-import IC.AST.Return;
-import IC.AST.Statement;
-import IC.AST.StatementsBlock;
-import IC.AST.StaticCall;
-import IC.AST.StaticMethod;
-import IC.AST.This;
-import IC.AST.UserType;
-import IC.AST.VariableLocation;
-import IC.AST.VirtualCall;
-import IC.AST.VirtualMethod;
-import IC.AST.Visitor;
-import IC.AST.While;
-import IC.SymbolsTable.IDSymbolsKinds;
-import lir_instructions.*;
+import ast.ASTNode;
+import ast.ArrayLocationExpr;
+import ast.AssignStmt;
+import ast.BreakStmt;
+import ast.CallStmt;
+import ast.ContinueStmt;
+import ast.Expr;
+import ast.ExprBlock;
+import ast.Field;
+import ast.Formal;
+import ast.ICClass;
+import ast.IfStmt;
+import ast.LengthExpr;
+import ast.LibraryMethod;
+import ast.LiteralExpr;
+import ast.LocalVarStmt;
+import ast.LogicalBinaryOpExpr;
+import ast.LogicalUnaryOpExpr;
+import ast.MathBinaryOpExpr;
+import ast.MathUnaryOpExpr;
+import ast.Method;
+import ast.NewArrayExpr;
+import ast.NewClassExpr;
+import ast.PrimitiveType;
+import ast.Program;
+import ast.ReturnStmt;
+import ast.Stmt;
+import ast.StmtBlock;
+import ast.StaticCallExpr;
+import ast.StaticMethod;
+import ast.ThisExpr;
+import ast.UserType;
+import ast.VarLocationExpr;
+import ast.VirtualCallExpr;
+import ast.VirtualMethod;
+import ast.Visitor;
+import ast.WhileStmt;
+import lir.instructions.*;
+import symbol_table.IDSymbolKinds;
 
 public class TranslationVisitor implements Visitor{
 	int target;
@@ -79,7 +79,7 @@ public class TranslationVisitor implements Visitor{
 	private Stack<String> _endWhileLabelStack;
 	private String currentClassName;
 	private Map<String, List<String>> methodFullNamesMap;	
-	private IDSymbolsKinds currentMethodKind; // virtual or static
+	private IDSymbolKinds currentMethodKind; // virtual or static
 	private Boolean isMainMethod;
 	
 	public TranslationVisitor() {
@@ -197,7 +197,7 @@ public class TranslationVisitor implements Visitor{
 		//    _registers = new HashMap<>();
 
 		// add all statements
-		for (Statement stmt : method.getStatements()) {
+		for (Stmt stmt : method.getStatements()) {
 			stmt.accept(this);
 		}
 		
@@ -230,7 +230,7 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(Assignment assignment) {
+	public Object visit(AssignStmt assignment) {
 		target++;
 		assignment.getAssignment().accept(this);
 		target--;
@@ -244,13 +244,13 @@ public class TranslationVisitor implements Visitor{
 
 
 	@Override
-	public Object visit(CallStatement callStatement) {
+	public Object visit(CallStmt callStatement) {
 		callStatement.getCall().accept(this);
 		return null;
 	}
 
 	@Override
-	public Object visit(Return returnStatement) {
+	public Object visit(ReturnStmt returnStatement) {
 		if (!isMainMethod) {
 			if(returnStatement.hasValue()) {
 				returnStatement.getValue().accept(this);
@@ -263,7 +263,7 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(If ifStatement) {
+	public Object visit(IfStmt ifStatement) {
 
 		ifStatement.getCondition().accept(this);
 		labelHandler.increaseLabelsCounter();
@@ -284,7 +284,7 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(While whileStatement) {
+	public Object visit(WhileStmt whileStatement) {
 		labelHandler.increaseLabelsCounter();
 		int whileLabel = labelHandler.getLabelsCounter();
 		instructions.add(new LabelInstr(labelHandler.innerLabelRequest(CommonLabels.TEST_LABEL, whileLabel)));
@@ -303,21 +303,21 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(Break breakStatement) {
+	public Object visit(BreakStmt breakStatement) {
 		instructions.add(new JumpInstr(labelHandler.requestStr(this._endWhileLabelStack.lastElement())));
 		return null;
 	}
 
 	@Override
-	public Object visit(Continue continueStatement) {
+	public Object visit(ContinueStmt continueStatement) {
 		instructions.add(new JumpInstr(labelHandler.requestStr(this._whileLabelStack.lastElement())));
 		return null;
 	}
 
 	@Override
-	public Object visit(StatementsBlock statementsBlock) {
+	public Object visit(StmtBlock statementsBlock) {
 
-		for(Statement stmnt : statementsBlock.getStatements())
+		for(Stmt stmnt : statementsBlock.getStatements())
 		{
 			stmnt.accept(this);
 		}
@@ -325,7 +325,7 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(LocalVariable localVariable) {
+	public Object visit(LocalVarStmt localVariable) {
 		if (localVariable.hasInitValue()) {
 			localVariable.getInitValue().accept(this);
 			instructions.add(new MoveInstr(registers.request(target), new Memory(localVariable.getSymbolEntry().getGlobalId())));
@@ -335,7 +335,7 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(VariableLocation location) {
+	public Object visit(VarLocationExpr location) {
 		if (location.isExternal()) {
 			boolean tmp = assignmentCall;
 			assignmentCall = false;
@@ -350,7 +350,7 @@ public class TranslationVisitor implements Visitor{
 			instructions.add(new MoveFieldInstr(registers.request(target), new Immediate(fieldIndex), registers.request(target), true));
 		}
 		else {
-			if (location.getSymbolEntry().getKind() == IDSymbolsKinds.FIELD) {
+			if (location.getSymbolEntry().getKind() == IDSymbolKinds.FIELD) {
 				instructions.add(new MoveInstr(new Memory("this"), registers.request(target)));
 				int fieldIndex = this.classLayouts.get(currentClassName).getFieldIndex(location.getName());
 				if(assignmentCall)
@@ -368,7 +368,7 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(ArrayLocation location) {
+	public Object visit(ArrayLocationExpr location) {
 
 		for(Integer cl : arrs.values()) {
 			System.out.println(cl);
@@ -425,14 +425,14 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(StaticCall call) {
+	public Object visit(StaticCallExpr call) {
 
 		int unusedMethodTarget = target;
 		//library method call		
 		if (call.getClassName().equals("Library")) {
 			List<Operand> operands = new ArrayList<Operand>();
 
-			for (Expression arg : call.getArguments()) {
+			for (Expr arg : call.getArguments()) {
 				arg.accept(this);
 				operands.add(registers.request(target));
 				target++;
@@ -446,7 +446,7 @@ public class TranslationVisitor implements Visitor{
 			String staticCallMethodFullName = classLayouts.get(call.getClassName()).getMethodString(call.getName());
 			List<String> methodParams = this.methodFullNamesMap.get(staticCallMethodFullName);
 			int i = 0;
-			for (Expression arg : call.getArguments()) {
+			for (Expr arg : call.getArguments()) {
 
 				arg.accept(this);
 				paramOpRegs.add(new ParamOpPair(new Memory(methodParams.get(i)), registers.request(target)));
@@ -455,7 +455,7 @@ public class TranslationVisitor implements Visitor{
 			}
 			target = unusedMethodTarget;
 			int retTrarget = call.getMethodType().getReturnType().isVoidType() ? -1 : target;
-			instructions.add(new lir_instructions.StaticCall(
+			instructions.add(new lir.instructions.StaticCall(
 					labelHandler.requestStr(staticCallMethodFullName), paramOpRegs, 
 					registers.request(retTrarget)));
 		}
@@ -463,9 +463,9 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(VirtualCall call) {
-		if ((!call.isExternal()) && (currentMethodKind == IDSymbolsKinds.STATIC_METHOD)) {
-			StaticCall staticCall = new StaticCall(call.getLine(),
+	public Object visit(VirtualCallExpr call) {
+		if ((!call.isExternal()) && (currentMethodKind == IDSymbolKinds.STATIC_METHOD)) {
+			StaticCallExpr staticCall = new StaticCallExpr(call.getLine(),
 					this.currentClassName, call.getName(), call.getArguments());
 			staticCall.setEntryType(call.getEntryType());
 			staticCall.setMethodType(call.getMethodType());
@@ -490,7 +490,7 @@ public class TranslationVisitor implements Visitor{
 				String virtualCallMethodFullName = classLayouts.get(clsName).getMethodString(call.getName());
 				List<String> methodParams = this.methodFullNamesMap.get(virtualCallMethodFullName);
 				int i = 0;
-				for (Expression arg : call.getArguments()) {
+				for (Expr arg : call.getArguments()) {
 					arg.accept(this);
 					paramOpRegs.add(new ParamOpPair(new Memory(methodParams.get(i)), registers.request(target)));
 					i++;
@@ -499,20 +499,20 @@ public class TranslationVisitor implements Visitor{
 				Immediate funcIndex = new Immediate(classLayouts.get(clsName).getMethodIndex(call.getName()));
 				target = unusedMethodTarget;
 				int retTrarget = call.getMethodType().getReturnType().isVoidType() ? -1 : target;
-				instructions.add(new lir_instructions.VirtualCall(
+				instructions.add(new lir.instructions.VirtualCall(
 						registers.request(clsTarget), funcIndex, paramOpRegs, registers.request(retTrarget)));
 
 				return null;
 	}
 
 	@Override
-	public Object visit(This thisExpression) {
+	public Object visit(ThisExpr thisExpression) {
 		instructions.add(new MoveInstr(new Memory("this"), registers.request(target)));
 		return true;
 	}
 
 	@Override
-	public Object visit(NewClass newClass) {
+	public Object visit(NewClassExpr newClass) {
 		List<Operand> args = new ArrayList<Operand>();
 		args.add(new Immediate(classLayouts.get(newClass.getName()).getAllocatedSize()));
 		instructions.add(new LibraryCall(labelHandler.requestStr("__allocateObject"), args , registers.request(target)));
@@ -522,7 +522,7 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(NewArray newArray) {
+	public Object visit(NewArrayExpr newArray) {
 
 		List<Operand> args = new ArrayList<Operand>();
 		target++;
@@ -557,7 +557,7 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(Length length) {
+	public Object visit(LengthExpr length) {
 		target++;
 		length.getArray().accept(this);
 		target--;
@@ -584,7 +584,7 @@ public class TranslationVisitor implements Visitor{
 
 
 	@Override
-	public Object visit(MathBinaryOp binaryOp) {
+	public Object visit(MathBinaryOpExpr binaryOp) {
 		binaryOp.getFirstOperand().accept(this);
 		target++;
 		binaryOp.getSecondOperand().accept(this);
@@ -627,7 +627,7 @@ public class TranslationVisitor implements Visitor{
 		Reg rightReg=registers.request(--target);
 
 		//zero division check
-		if(binaryOp.getOperator()==IC.BinaryOps.DIVIDE || binaryOp.getOperator()==IC.BinaryOps.MOD)
+		if(binaryOp.getOperator()==ic.BinaryOps.DIVIDE || binaryOp.getOperator()==ic.BinaryOps.MOD)
 			divisionCheck(leftReg);
 
 		instructions.add(new BinOpInstr(leftReg, rightReg, op));
@@ -635,7 +635,7 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(LogicalBinaryOp binaryOp) {
+	public Object visit(LogicalBinaryOpExpr binaryOp) {
 
 		//target++;
 		//binaryOp.getSecondOperand().accept(this);
@@ -786,7 +786,7 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(MathUnaryOp unaryOp) {
+	public Object visit(MathUnaryOpExpr unaryOp) {
 		target++;
 		unaryOp.getOperand().accept(this);
 		target--;
@@ -796,7 +796,7 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(LogicalUnaryOp unaryOp) {
+	public Object visit(LogicalUnaryOpExpr unaryOp) {
 		target++;
 		unaryOp.getOperand().accept(this);
 		target--;
@@ -808,7 +808,7 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(Literal literal) {
+	public Object visit(LiteralExpr literal) {
 		switch(literal.getType()) {
 		case STRING:
 			//emit("Move str"+stringLiterals.add((String)literal.getValue())+",R"+target); 
@@ -837,7 +837,7 @@ public class TranslationVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(ExpressionBlock expressionBlock) {
+	public Object visit(ExprBlock expressionBlock) {
 		expressionBlock.getExpression().accept(this);
 
 		return null;
