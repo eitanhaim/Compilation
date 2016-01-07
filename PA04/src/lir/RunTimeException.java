@@ -1,6 +1,7 @@
 package lir;
 
 public class RunTimeException extends RuntimeException {
+	private static final long serialVersionUID = -7287486561773885176L;
 	private int line;
 	private int column;
 	    

@@ -34,13 +34,13 @@ public class Main {
 			ICClass libRoot = parseLibFile();
 			if (libRoot == null)
 				return;
-			System.out.println("Parsed " + libPath +" successfully!");
+			//System.out.println("Parsed " + libPath +" successfully!");
 			
 			// parse the IC file
 			Program icRoot = parseICFile();
 			if (icRoot == null)
 				return;
-			System.out.println("Parsed " + icPath +" successfully!");
+			//System.out.println("Parsed " + icPath +" successfully!");
 			
 			// make sure that the Library class has the correct name
 			if(!libRoot.getName().equals(LIB_NAME)) 
@@ -65,7 +65,7 @@ public class Main {
 			writer.print(trv.printInstructions());
 			writer.close();
 			
-			System.out.println("Created LIR file successfully!");
+			//System.out.println("Created LIR file successfully!");
             
             // pretty-print the AST to System.out, if requested
             if (printast && (icRoot != null))
