@@ -1,0 +1,37 @@
+str0: "y="
+_DV_A: [_DV_B_foo,_ic_main]
+_DV_B: [_ic_main,_DV_B_foo]
+_DV_B_foo:
+Move y,R1
+Move 1,R2
+Add R2,R1
+Move R1,z
+Move z,R1
+Return R1
+_ic_main:
+Library __allocateObject(16),R1
+MoveField _DV_B,R1.0
+Move R1,p
+Move p,R1
+Move R0,R1 #####
+Move 5,R2
+VirtualCall R1.0(y=R2),R1
+_DV_B_foo:
+Move str0,R0
+Move y,R1
+Library __itos(R1),R1
+Library __stringCat(R1, R2),R1
+Move s,R1
+Move R1,s
+Move s,R1
+Library __println(R1),Rdummy
+Move s,R2
+Library __stoa(R2),R2
+Move R2,sarr
+Move sarr,R4
+ArrayLength R4,R3
+Move R3,l
+Move l,R3
+Library __printi(R3),Rdummy
+Move l,R3
+Return R3

@@ -1,0 +1,23 @@
+class A {
+	D d;
+	int x;
+	static void main(string[] args) { 
+		A a = new A();
+		a.d = new D();
+		Library.printi(a.foo());
+	}
+	
+	int foo() {
+		d.c = new C();
+		d.c.x = 5;
+		return d.c.x;
+	}
+}
+
+class C {
+	int x;
+}
+
+class D {
+	C c;
+}
